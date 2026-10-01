@@ -1,0 +1,279 @@
+DUMPPROG version 2.10 - Dump program file in mixed disassembly and source code.
+
+  Copyright (c) D.J. Murdoch, 1991-1993
+  Portions of disassembler copyright (c) 1992 Jeroen Pluimers, based on
+   public domain code by William Peavy
+
+Syntax:  DUMPPROG [options] progname [selection]...
+
+ reads map from progname.MAP and dumps executable progname.EXE
+
+ Options (either '/' or '-' may be used):
+   /Exxx    Use source extension xxx if unspecified in MAP file.
+            Default is PAS.
+   /M       Dumpprog will write out .MAP information.
+   /O       Force DUMPPROG to dump using old .EXE format.
+   /A       Dump complete .EXE image.  (NB:  selections will override this.)
+   /Verbose Display verbose code.
+   /0 to /4 Choose instruction set: 8086 thru 80486.
+
+   Selection - What to dump:
+     Name          - dumps public symbol or segment Name
+     [filename]#nn - dumps source line nn
+     ssss:oooo     - dumps specific hex address
+     Selection1-Selection2 - dumps from start of first selection
+                             to end of second one.
+     Generally any name used as a label in the dump may be used to
+     select a range to dump.
+
+Examples:
+
+  DUMPPROG myprog.exe
+    will use myprog.map for information, and assume .PAS extension.
+    Output will go to the screen.  Only code with source lines mentioned
+    in the .MAP file will be dumped.
+  DUMPPROG myprog.exe /A
+    will be as above, but the complete .EXE will be dumped.
+  DUMPPROG myprog /Epas >myprog.lst
+    will dump myprog.exe using myprog.map for information, and assume
+    that any source file with no extension should have .pas added,
+    putting the results into the file myprog.lst.
+  DUMPPROG myprog myproc
+    will dump myprog.exe, public symbol myproc.
+  DUMPPROG myprog myprog.pas#23-myproc
+    will dump myprog.exe, starting at source line 23 in myprog.pas,
+    and stopping at the end of myproc.
+  DUMPPROG myprog #34-#56
+    will dump myprog.exe source lines 34 to 56 (from every source file).
+  DUMPPROG kernel.exe entry.91
+    will dump the (Windows) kernel.exe routine INITTASK, which is entry
+    point 91.
+
+Description:
+
+  This program is designed to let you see disassembled output mixed with
+  source code, as some compilers will optionally output.  It can make
+  use of a detailed .MAP file from the compiler which includes source
+  files, public definitions and line number information.  If you don't
+  have one, it will try to construct a segment map; you must then
+  explicitly ask for particular parts of the file (using selection
+  parameters).
+
+  I wrote it and tested it on the .EXE files and .MAP files produced by
+  various versions of Turbo Pascal and Borland Pascal; it should work
+  (but probably has bugs) on other programs.  To get a detailed map from
+  Turbo Pascal, use the $D+ (debugging info) and /GD options on the
+  command line, or set these options in the IDE.
+
+  You can control which parts of a program are dumped by editing the
+  .MAP file, using selections, or using the /A option.
+
+  If public symbols are defined in the map file, their locations will be
+  marked in the disassembly, and calls or jumps to them will be
+  identified.
+
+  With new .EXE files (i.e. those for Windows, OS/2, or DOS extenders),
+  public symbols and entry points will be marked in the disassembly, and
+  can be used for selections.
+
+Selections:
+
+  The ideal selection logic would let you type what you mean, and
+  DUMPPROG would figure it out and dump it for you.  The actual logic
+  isn't quite that good, but it tries its best, building on some fairly
+  simple rules.
+
+  If you give a single item, you get the dump from the start of it to
+  the end.  If you give a range using 'first-second', you get from the
+  start of first to the end of second.
+
+  Individual items can be of several types:
+
+     Any label taken from a dump can be used as an item, e.g.
+     "dumper.pas#236" or "dump_selection" taken from
+
+        DUMP_SELECTION:
+        dumper.pas#236:  begin
+          008E:0A33 55              PUSH    BP
+          008E:0A34 89E5            MOV     BP,SP
+
+     Source files can be specified in any way which would be equivalent
+     under DOS, with the /Exxx (default .PAS) extension added if no dot
+     is given.  If an exact line match isn't found in the .MAP, an
+     approximate one is used.  For example, "dumpprog#1" selects the
+     following fragment from the DUMPPROG source:
+
+        SYNTAX_EXIT:
+        c:\stuff\dumpprog\dumpprog.pas#16:  begin
+          0000:0237 55              PUSH    BP
+          0000:0238 89E5            MOV     BP,SP
+          0000:023A 31C0            XOR     AX,AX
+          0000:023C 9ADF04CD0A      CALL    0ACD:04DF
+
+     Addresses can be given in hex; a segment is required in the
+     first item, but not in the second, where the segment of the first
+     is assumed.  For example, "syntax_exit-23b" would select the first
+     three lines of disassembly above, as would "0:237-23b" or
+     "0:237-0:23b".
+
+     By specifying segments explicitly, you can force DUMPPROG to ignore
+     the segmentation implied by the .MAP file in DOS programs.  It'll
+     complain; for example "23:7-23:b" gives the same range as above,
+     but the dump looks like this:
+
+        Warning:  Segment incorrect!
+        SYNTAX_EXIT:
+        Warning:  Segment incorrect!
+        c:\stuff\dumpprog\dumpprog.pas#16:  begin
+          0023:0007 55              PUSH    BP
+          0023:0008 89E5            MOV     BP,SP
+          0023:000A 31C0            XOR     AX,AX
+
+     Ambiguities (e.g. "0:0-abc", where it's not clear if "abc" is a hex
+     number or an identifier) are resolved in favour of the identifier.
+
+DUMP2MSG:
+
+  Turbo/Borland Pascal 7.0 and Borland C++ include an option in their
+  environments to install external tools.  I've written a "message
+  filter" called DUMP2MSG to let you install DUMPPROG as an external
+  tool; it allows you to point to the name of a routine, and obtain a
+  disassembly of it in a single keystroke.
+
+  Here's how to install it in the BP IDE.  The same instructions work
+  for the TP 7.0 IDE; I'm not familiar with BC++ so I'm not sure of how
+  to install the filter there.
+
+  1. Select the Options Tools menu, scroll to a blank position, and
+     type N to create a new entry.
+  2. Fill in the fields as follows:
+      Title:         D~u~mpprog
+      Program path:  DUMPPROG
+      Command line:  $SAVE PROMPT $NOSWAP $CAP MSG(DUMP2MSG) $EXENAME
+                     $EDNAME#$LINE $CURTOKEN
+
+     (The command line should be typed all on one line.)  You may want to
+     insert "$PROMPT" before $EXENAME if you want to be able to edit the
+     arguments to DUMPPROG.
+  3. Assign a hot key to the disassembler by selecting one from the list
+     at the right of the dialog box.
+  4. Save the changes by hitting Enter, Alt-K for OK, and then Options Save.
+
+  Once it's installed, you use the tool as follows.  Compile your
+  program with the detailed map file (Options Linker Detailed), point at
+  a symbol, and hit your chosen hot key.  A message window will pop up
+  showing a disassembly of the current line and of the current symbol.
+
+Limitations:
+
+  DUMPPROG can't tell code from data with standard .EXE files.  In Turbo
+  Pascal executables, constant data is kept at the beginning of code
+  segments.  DUMPPROG will try to disassemble this, producing lengthy
+  streams of nonsense.
+
+  It doesn't know whether a source line is complete or not.  The map
+  file says where the source starts; it doesn't say where it ends.
+
+  It also doesn't know where code ends, but does a bit better here.
+  Generally it assumes code stretches to the next line given in the MAP
+  file.  This can lead to very long stretches of assembler with no
+  source, and probably with incorrect segment/offset addresses, if
+  there's a gap in the .MAP. For the last line in the .MAP file, it
+  displays up to the the start of the next segment, or the end of the
+  executable, whichever comes first.
+
+  Source code must be in the current directory, or on a path specified
+  with the filename in the .MAP file.  If DUMPPROG can't find the
+  source, it will print a warning and go ahead, leaving blanks where the
+  source code should go.
+
+Credits
+
+  The disassembler in DUMPPROG is an adaptation of a module from William
+  Peavy's excellent TWU program (used with permission).  Jeroen Pluimers
+  updated it to 486 opcodes, and added the hooks that let it work with
+  DUMPPROG.  Many thanks to several beta testers who found a number of
+  bugs.
+
+  DUMPPROG is written in Turbo Pascal, and compiled in the Borland
+  Pascal 7.0 compiler.  It uses several units from the excellent Turbo
+  Professional library by TurboPower software.
+
+Changing the default options:
+
+  If you don't like the defaults I've chosen for any of the options,
+  you can change them---provided you're comfortable with patching the
+  .EXE file.  The changeable defaults are all in a group near the end of
+  the .EXE, with Turbo Pascal declarations:
+                                      { Option to change value }
+    SourceExtension : String[3] = 'pas';     { /E }
+    DoWriteMap      : Boolean   = False;     { /M }
+    Force_Old_Style : Boolean   = False;     { /O }
+    VerboseEmulation: Boolean   = False;     { /V }
+    Dump_it_all     : Boolean   = False;     { /A }
+    CPU_type        : Byte      = 4;         { /0, /1, /2, /3, /4 }
+    One_Line        : Boolean   = False;     { none! }
+    Case_Sensitive  : Boolean   = False;     { none! }
+
+  The last two flags can't be set from the command line.  If "One_Line"
+  is true, then only one line of source code will be printed for each
+  code fragment.  If "Case_Sensitive" is true, then the symbol table
+  becomes case sensitive.  The only way to change these is to patch the
+  .EXE.
+
+  To find this group of variables, just search for the string 'pas'.
+  Last I checked, this was the only occurrence in DUMPPROG.EXE.  Note
+  that TP stores "String[3]" as a length byte followed by 3 characters,
+  and Booleans as single bytes, 0=False, 1=True.
+
+History
+
+  1.0 - First version
+
+  1.1 - Added code for Windows/3 executables as well as standard DOS
+        .EXE files; it may also handle OS/2 executables, but I don't
+        have any to try it on.
+
+  1.2 - Added some 286 and 386 opcodes to disassembler
+
+  1.21 - Fixed error in display of IMUL instruction
+
+  2.00 - New disassembler, with full 486 opcodes displayed.
+         Added support for public symbols, and support for Win/3 loader
+         fixups.
+         Fixed buggy handling of .COM files.
+
+  2.01 - Added selection capability, /M option, /A option, /0 to /4
+         options, fixed bugs.
+
+  2.10 - Added support for module names from detailed segment list, and
+         general modifiers (like IDLE) from public list.
+
+License
+
+  DUMPPROG is not a public domain program.  It contains code whose
+  copyright belongs to D.J. Murdoch and Jeroen Pluimers, as well as
+  library code from Borland International and TurboPower Software, and
+  public domain code written by William Peavy.
+
+  You are free to use DUMPPROG without charge.  You may distribute it
+  unmodified, together with this documentation file, provided that you
+  charge no more than distribution costs, and on no account more than
+  $10 per copy.
+
+Warranty
+
+  There is no warranty of any kind with this program.  It is
+  experimental software, and likely contains bugs.  Use at your own
+  risk.
+
+Note:  Expect bugs.  If you find any, please send bug reports to me (Duncan
+Murdoch) at one of the following addresses:
+
+ DJ Murdoch at Fidonet node 1:249/1.5
+ dmurdoch@mast.queensu.ca on Internet
+ 71631,122 on Compuserve
+
+ 337 Willingdon Ave
+ Kingston, Ontario, Canada K7L 4J3
+

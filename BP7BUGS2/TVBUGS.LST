@@ -1,0 +1,16 @@
+Brad Williams and Marc Stern have put together lists of TurboVision bugs
+in Pascal and C++.  Now that they have taken on this task, I can happily
+stop trying to collect TurboVision bugs.
+
+Please send new reports on TurboVision bugs to Brad, not to me. At
+present, he can only be reached by Internet email to
+bwilliams@marvin.ag.uidaho.edu.  If you'd like to report bugs to him but
+can't use Internet, I'll forward them to him.  My addresses are given in
+BP7BUGSx.LST.
+
+To get a copy of Brad's list, look for TVBUGSx.ZIP, either where you
+found this file, or at his Internet ftp site vtucs.cc.vt.edu in the
+turbo-vision/faq directory.
+
+Duncan Murdoch
+

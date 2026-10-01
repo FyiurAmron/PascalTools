@@ -1,0 +1,102 @@
+INTRFC - Program to dump TPU files. (Feb, 1990)
+
+Version 1.2:  Dumps TP 5.5 format files.
+
+Written for the public domain by D.J. Murdoch (CIS 71631,122 or
+Fidonet 1:249/1.5)
+
+INTRODUCTION
+
+     I started INTRFC because I got a library of Turbo Pascal 4.0
+subroutines which had some errors in the documentation.  One of
+the functions wanted its arguments to be a special type, but the
+doc's didn't tell me which one.  TP gave me an error message
+saying I wasn't using the right type, but wouldn't tell me which
+one to use either.  I decided to decode the TPU file and figure
+out what TP wanted.  Once I got started, it was hard to stop.
+So, I ended up writing INTRFC, which printed out almost all the
+information you'll ever need about the interface to a TPU unit.
+
+     I decided to upgrade INTRFC to TP 5.5 files recently, and
+got carried away again.  Now it dumps the complete file, not just
+the interface section.
+
+     Because of the way it was written, i.e. entirely by
+guesswork, I'm sure there are numerous special cases that it
+doesn't handle properly.  That's one reason the source code is
+there - so other people can fix up my mistakes.
+
+     The other reason I included source code is because it will
+serve as a bit of documentation for the TPU file format since
+Borland will never publish it.  (They want to be free to change
+the format, making INTRFC obsolete whenever a new TP arrives.)
+Others who want to do completely different things to a TPU file
+may benefit from reading it.  (The other difficulty with a
+program written the way this one was is that comments are almost
+non-existent.  If you have any short questions about it that you
+can't figure out, send them to me at one of the addresses above.)
+
+USAGE:
+        INTRFC /options unit
+   where options are letters from the following:
+      B - emitted code Bytes
+      C - initialized Constant blocks
+      D - coDe blocks
+      E - routine Entry records
+      G - emitted Global const bytes
+      H - TPU Header
+      I - Implementation section (if $D was used in compilation)
+      L - proc/fn Locals (if $L was used in compilation)
+      N - Names in interface
+      O - Object VMT records
+      R - Relocation records
+      V - Var blocks
+      A - turn All options on
+      Tpath - set the Turbo directory, where the TURBO.TPL and referenced
+              units are kept
+
+   Options are processed sequentially and toggle the display.
+   E.G. To see all but the relocation records in the system unit, use
+      INTRFC /AR /T\turbo SYSTEM
+   The default is just the names in the interface section.
+
+LIMITATIONS
+
+    There are tons of limitations to INTRFC.  It doesn't know how
+to print any but the simplest types of constants.  It won't print
+the values of typed constants. Etc. Etc. Etc.  If you want it to
+do something differently just go ahead and change it!  I
+recommend compiling with all possible checks turned on, since
+it's pretty easy to get lost in all those pointers.
+
+FILES
+
+The following files should be included in this package.
+
+INTRFC   DOC     3653  25-02-90   8:41p  Usage docs
+TPU55    DOC     3458  25-02-90   8:44p  TPU structure docs
+INTRFC   EXE    44336  25-02-90   8:42p  The main executable
+
+INTRFC   PAS     3356  25-02-90   7:02p  The main program
+GLOBALS  PAS      961  25-02-90   7:02p  Program globals
+
+HEAD     PAS     2359  25-02-90   1:22p  The TPU header dumper
+NAMELIST PAS    17471  25-02-90   2:16p  Prints interface section
+NAMETYPE PAS     2412  25-02-90   2:06p  Type definitions for NAMELIST
+BLOCKS   PAS     5073  25-02-90   2:21p  Routines for code_blocks, etc.
+CODE     PAS     1313  25-02-90   8:09p  Code and const dumper
+RELOC    PAS     3638  25-02-90  10:31a  Prints relocation records
+
+PARAMS   PAS     2729  25-02-90   7:07p  Parameter parser
+LOADER   PAS     5032  25-02-90   2:29p  Reads in .TPU and .TPL files
+TEST1    PAS      715  25-02-90   7:08p  Test file
+UTIL     PAS     6613  24-02-90  11:01a  Various utility routines
+DUMP     PAS     2302  25-02-90   8:06p  Various dump routines
+
+THAT'S IT!
+
+     Have fun with INTRFC and Turbo Pascal.  I'd like to hear of
+any novel uses.
+
+D.J. Murdoch
+

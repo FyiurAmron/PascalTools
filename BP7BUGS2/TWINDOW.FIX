@@ -1,0 +1,32 @@
+
+#: 120 S0/CompuServe Mail
+    09-Mar-92 14:35 EST
+Sb: Another TP bug
+Fm: Hans Schleichert [100031,775]
+
+Here we go again... I've found another bug in Turbo Vision...
+
+Bug: A window that has neither the wfGrow now wfMove flags set does not
+disable the cmResize command when it is active.
+
+Reason: A pair of parentheses is missing in the TWindow.SetState method.
+
+Workaround: Create a descendant of TWindow with an overriden SetState
+method:
+    PROCEDURE TMyWindow.SetState (AState : Word ; Enable : Boolean) ;
+        BEGIN
+            TWindow.SetState (AState, Enable) ;
+            IF (AState = sfSelected) AND Enable THEN
+            IF Flags AND (wfGrow+wfMove) = 0 THEN
+            DisableCommands ([cmResize])
+        END ;
+Notice the parentheses around "wfGrow+wfMove" which are missing in the
+original.
+
+
+
+  Action!
+ÿ
+
+
+

@@ -1,0 +1,35 @@
+
+#: 121 S0/CompuServe Mail
+    20-Mar-92 14:58 EST
+Sb: TP bug list
+Fm: Hans Schleichert [100031,775]
+
+Duncan,
+  I send you a message some time ago concerning a bug in Turbo Vision. I
+could find a way to get round that one.
+This was the bug:
+  Calling MoveBuf (unit Drivers) with an Attr parameter of 0 would
+produce a corrupt draw buffer.
+
+Reason:
+  There is a STOSB instruction where a MOVSB ought to be.
+
+Workaround:
+  A run-time patch changes the STOSB into a MOVSB. Insert this line of
+Turbo Pascal code in your main program (or/and in any unit initialisation
+part which uses MoveBuf):
+Mem [Seg (MoveBuf):Ofs (MoveBuf) + $1F] := $A4 ;
+This works even with overlaid programs because DRIVERS.TPU cannot be
+overlaid.
+
+That's it!
+        -  Hans
+
+
+  Action!
+ÿ
+--------
+An alternative fix is to patch DRIVERS.TPU:
+
+Patch the byte $AA at offset decimal 7085 (hex $1BAD) in DRIVERS.TPU to $A4 to
+make the change.

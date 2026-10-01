@@ -1,0 +1,34 @@
+4)  Delay() patch provided by Borland for 50 MHz 486s:
+
+This is a patch for the CRT unit for Turbo Pascal version 6.0. It takes care
+of unpredictable DELAY times on computers faster than 30mhz.
+
+To patch the CRT unit you need to have TURBO.TPL and TPUMOVER.EXE from
+Turbo Pascal 6.0, and DELAYPAT.BAT from this ZIP file all in the
+same directory. Also DOS's DEBUG must be in the current directory or
+in the current path.
+
+MAKE THESE CHANGES TO A COPY OF TURBO.TPL NOT YOUR ORIGNAL!
+DO NOT CHANGE YOUR ORIGNAL TURBO.TPL ONLY CHANGE YOUR WORKING COPY!
+
+To install the new CRT unit Type: DELAYPAT
+
+When the DOS prompt comes back the installation process
+is complete.  NOTE: the changes will only affect programs that are compiled
+after that patch has been made.
+
+[ DELAYPAT.BAT: ]
+    Goto Batch
+    e 8BB 3E
+    e ADC 59 5B 5A 53 51 90
+    e AE5 14
+    e AF1 0E
+    e AF4 E8 04 00 4A 75 F6 CB BB 04 00 4B 75 FD 26 3A 05 E1 F5
+    w
+    q
+    :Batch
+    tpumover TURBO.TPL *CRT.TPU
+    debug CRT.TPU <Delaypat.BAT
+    tpumover TURBO.TPL +CRT.TPU
+    del crt.tpu
+

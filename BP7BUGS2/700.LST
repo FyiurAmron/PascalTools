@@ -1,0 +1,64 @@
+--------------------------------------------------------------------
+700.LST - A list of bugs in the original October 1992 of BP 7.00 that
+have been fixed in the March 1993 maintenance release BP 7.01.
+--------------------------------------------------------------------
+
+See the main bug list (BP7BUGSx.LST) for all the warnings about the
+limitations of this list.
+
+Please let me know if any of the bugs I've listed here as fixed still
+show up in your programs!
+
+Duncan Murdoch
+
+---------------
+
+
+3.  A window that has neither the wfGrow now wfMove flags set does not
+disable the cmResize command when it is active.  (A fix is available:
+see TWindow.fix in BP7BUGSn.ZIP).
+
+26. There are certain illegal Extended encodings that crash the debugger
+in TURBO and BP.
+
+29. On a 386, a longint shift of 16 bits or more is unreliable. (A fix
+is available in NEWSHR.FIX.)
+
+32. The DisposeNode procedure in the Outline unit neglects to dispose of
+the Text string. (A fix is available in OUTLINE.FIX.)
+
+33. Overflow checking $Q+ sometimes misses overflows in operations on
+bytes.
+
+34. The file dialog in STDDLG.PAS messes up directory changes.  (A fix
+is available in FILEDIAL.FIX.)
+
+37. The expression "Word(hi(wordvar))" doesn't zero-extend the high byte
+of wordvar to give a word, it gives the word from memory starting at the
+location of the high byte of wordvar, i.e. the high byte plus the low
+byte of the next variable.  The same sort of thing happens with expressions
+like "Longint(ord(charvar))" and "Longint(length(stringvar))".
+
+38. With the extended syntax $X+, asciiz character arrays that are
+fields in records passed as const parameters aren't handled properly by
+Writeln.  (This bug report clearly needs some work! Can anyone tell me
+exactly what triggers this one?)
+
+43. Typed constants that are local to assembler routines can't be watched in
+the IDEs or TD without explicitly giving the routine name as a prefix, e.g.
+MyAsmRoutine.MyConst.
+
+44. In protected mode, if you have any BGI drivers registered with
+RegisterBGIDriver then you must register them again if you call CloseGraph and
+want to call InitGraph again.
+
+46. Longint constants given in decimal in BASM statements like "DD 666777"
+are truncated to 16 bits.  (Express it in hex, and things are fine!)
+
+49.  If a TMemStream Init runs out of memory, then disposing of the
+object won't free up all the memory.
+
+53.  In $N- mode, Val and Read will declare an error in a real number
+containing more than 41 digits.  In $N+ mode, Read will ignore any digits
+after the first 64.
+

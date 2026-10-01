@@ -1,0 +1,30 @@
+
+#: 112998 S8/TPascal For Windows
+    15-Jul-91  18:17:25
+Sb: TBugStream bug fix
+Fm: Amrik Dhillon (Borland) 76424,2231
+To: dj murdoch 71631,122
+
+dj and all,
+ 
+Here is the bug fix from QA regarding TBufStream writing garabage to the
+stream file.
+ 
+using DEBUG <g>
+ 
+in WOBJECTS.TPU
+-e7ca3
+    43.35
+-w
+ 
+in OBJECTS.TPU
+-e2c75
+     45.37
+-w
+ 
+if you have the RTL, change first jump "JE @@4" to "JE @@3" in FlushBuffer.
+-Amrik
+
+
+ÿ
+

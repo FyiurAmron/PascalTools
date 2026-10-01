@@ -1,0 +1,88 @@
+STRIPPED - Check directories for files damaged by TDSTRIP.
+
+Written by D.J. Murdoch for the public domain, May, 1992.
+
+SYNTAX:
+
+  STRIPPED dir
+
+will search the given directory, and any of its subdirectories, for
+damaged .EXE files.
+
+DESCRIPTION:
+
+Borland ships a utility called TDSTRIP with its Turbo Debugger.  TDSTRIP
+lets you strip the external debugging information out of .EXE or .OBJ
+files.  However, version 2.0 (and some later ones) contain a serious
+bug:  it damages the header of the .EXE file, setting the "minimum extra
+allocation" field to zero.
+
+The extra allocation fields are used by DOS to determine how much memory
+to give to your program.  In addition to the amount needed to load the
+image of your .EXE file, you'll get at least the minimum allocation and
+as much as the maximum allocation, if it's available.  If there's not
+enough memory to give you the minimum allocation, DOS will refuse to
+load the program.
+
+The extra memory is used in different ways depending on the
+compiler/linker, but Turbo Pascal makes typical use of it: uninitialized
+static variables, the stack, the overlay buffer, and the heap all reside
+there.
+
+If you try to load a TDSTRIP-damaged .EXE file, usually nothing bad will
+happen.  You'll have more than the required minimum, and things will be
+fine.  However, if memory is very tight, you might have less than the
+true minimum, but more than the 0 value that TDSTRIP has put in.  Your
+program may be loaded with an initial stack pointer in video memory, or
+in an area where there's no memory, or in the middle of a TSR that's
+been loaded above it.  You'll quickly crash.
+
+The program STRIPPED is an attempt to detect these damaged files.  It
+checks the header, and verifies that the initial stack pointer is going
+to fall within the minimum allocation.  If not, it prints the name of
+the file, and the amount of free RAM which you'd need to have for it to
+actually matter.
+
+STRIPPED doesn't try to fix the .EXE, because there's no way to know
+what the true minimum allocation should be; the program may use
+overlays, or depend on a certain size of heap. Turbo Pascal 6 source for
+STRIPPED is included in this archive, so feel free to attempt fixes if
+you feel confident.  A safer approach, if available, is to recompile the
+bad .EXE, and not to use TDSTRIP on it.  The EXEMOD program distributed
+with some compilers could also be used to repair the damage, if you're
+willing to guess at the required size.
+
+MY DAMAGED PACKAGES:
+
+Several programs that I've release to the public have damaged .EXEs in them.
+Here's the list I know about:
+
+  Package                File                 Danger Zone
+
+  CACHEMON           CACHEREP.EXE          16832 < RAM < 34128
+  GLUE                   GLUE.EXE          10560 < RAM < 29600
+  INTRFC5              INTRFC.EXE          28912 < RAM < 47616
+  INTRFC55             INTRFC.EXE          39728 < RAM < 58464
+  INTRFC62             INTRFC.EXE          49136 < RAM < 67888
+  NEXTCLUS           NEXTCLUS.EXE           3088 < RAM < 20080
+  SAVEMOUS           RESTOREM.EXE           4976 < RAM < 22240
+  SCAN200A           SCANHELP.EXE          40832 < RAM < 78768
+  TDHIDE               TDHIDE.EXE          18448 < RAM < 36208
+  TPU2TPS             TPU2TPS.EXE           4256 < RAM < 54256
+  VCPIMAP             VCPIMAP.EXE          15824 < RAM < 32864
+
+The "danger zone" values above are off by a few hundred bytes; I
+produced this list with an older version of STRIPPED.
+
+SUPPORT:
+
+Support?  Well, comments on STRIPPED should be sent to me at one of the
+following addresses.  No guarantee that I'll be able to help though.
+
+  Internet:    dmurdoch@watstat.waterloo.edu
+  Fidonet:     DJ Murdoch at 1:249/99.5
+  Compuserve:  71631,122
+  Postal:      337 Willingdon Ave,       (After June 19, 1992)
+               Kingston, Ontario, Canada
+               K7L 4J3
+

@@ -1,0 +1,364 @@
+TP6BUGS7.LST - Version 7 of TP 6.0 bug list
+
+This is the last edition of my completely *un*official list of bugs in
+TP 6.0.  TP 7.0 and BP 7.0 were released in November 1992; I'm starting
+a bug list for those. The first edition (BP7BUGS1.LST) is being released
+at the same time as this last edition. For this list, I've noted which bugs
+appear to have been fixed in BP 7.0.
+
+There were (at least) two releases both numbered 6.00: the original one
+in October 1990, and another in June 1991.  You can identify the later
+release by the date or by the file size:  TURBO.EXE is 325982 bytes in
+the later release.  Several bugs were fixed in the second release; some
+of those are marked below.  I've also heard of a 6.01 release dated July
+1991, but haven't tested any of these bugs against it.
+
+The list is very abbreviated;  if any of the items are too obscure, ask
+and I'll expand on them.  One abbreviation I've been asked about:
+"BASM" is the built-in assembler used in asm blocks.
+
+Juergen Schlegelmilch sent me a very detailed list of bugs & fixes in TP
+6.0 & Turbovision; the file version (TP6BUGSn.ZIP) of this list contains
+all of his comments.  It also contains a few patches and fixes that I've
+collected.  The file version will be available on Fidonet on the PDN
+Pascal file echo area, and on Internet from garbo.uwasa.fi.  It is also
+available on the PC Techniques section of CLMFORUM on Compuserve in DL
+16, as TPBUGS.ZIP.
+
+Many other people have sent me their bug lists; thanks to all of them.
+In particular, some recent additions are from Andy McFarland, Arno
+Haket, Hans Schleichert, Norbert Juffa, and Jud McCranie.  I know I've
+missed a few recent contributors; sorry!
+
+I'd appreciate it if anyone sent me their own bug list; I'll publicize
+it on Usenet, Fidonet and Compuserve. I'd also appreciate hearing about
+patches.  (If you don't have access to any of those, I don't know how
+you're reading this, but I'll send you the latest version of the BP 7
+list on diskette if you send me $10.00 US or Canadian.  I'll fill up the
+rest of the disk with various utilities and programs I've written; let
+me know if there's any particular type you'd like.)
+
+Duncan Murdoch
+
+ dmurdoch@mast.queensu.ca  (Internet address)
+ 71631,122                 (Compuserve)
+ DJ Murdoch at 1:249/1.5.  (Fidonet)
+
+ 337 Willingdon Ave.
+ Kingston, Ontario, Canada
+ K7L 4J3
+
+
+January 3, 1993:
+
+Longint constants given in decimal in BASM statements like "DD 666777"
+are truncated to 16 bits.  (Express it in hex, and things are fine!  Not
+fixed in BP 7.)
+
+December 30, 1992:
+
+Typed constants that are local to assembler routines can't be watched in the
+IDE or TD without explicitly giving the routine name as a prefix, e.g.
+MyAsmRoutine.MyConst. (Not fixed in BP 7.)
+
+August 12, 1992:
+
+The FLDLN2 instruction (which is valid on an 8087) triggers error 159,
+"286/287 instructions are not enabled" when compiled in the $N+,G- mode.
+(Fixed in BP 7.)
+
+July 20, 1992:
+
+The string formatting routines get the 19th digit wrong on very large Comp
+numbers. (Not fixed in BP 7.)
+
+May 28, 1992:
+
+The TDSTRIP utility which comes with the professional version of TP damages
+the .EXE header:  the min extra paragraphs field is set to 0. (See
+STRIPPED.ZIP in TP6BUGSn.ZIP for a damage detector).  (Fixed in BP 7.)
+
+Actual heap allocation can be 511 bytes more than the maximum specified in the
+$M directive. (Not fixed in BP 7.)
+
+April 17, 1992:
+
+If the Objects unit is overlaid, calls to stream or collection Error
+methods can cause system crashes. (Fixed in BP 7.)
+
+The Drivers unit misses keystrokes if the keyboard buffer has been
+reallocated.
+
+Extensions to the Drivers unit INT09 (keyboard interrupt) handler won't
+work when run within the IDE, because the interrupt handler won't be
+installed.
+
+A window that has neither the wfGrow now wfMove flags set does not
+disable the cmResize command when it is active.  (A fix is available:
+see TWindow.fix in TP6BUGSn.ZIP).  Not fixed in BP 7!
+
+April 13, 1992:
+
+The compiler doesn't detect overlapping case constants.  Only the first
+matching case is executed.  (Not fixed in BP 7.)
+
+The Delay() routine in CRT gives inaccurate delays on some very fast
+machines. A patch (DELAY.FIX) from Borland is included in TP6BUGSn.ZIP.
+(Fixed in BP 7.)
+
+The SetViewPort procedure accepts X1=X2 or Y1=Y2 (contrary to the
+documentation), but clipping doesn't work properly with these settings.
+(Fixed in BP 7.)
+
+TopText, CentreText, and BottomText are defined differently for
+DefaultFont and stroked fonts.
+
+Single and Double types typed constants are not correctly initialized
+for absolute values smaller than 1.17xxxxE-38 respectively 2.22xxxxE-308
+(their value wil be zero instead).  The lower limit of the dynamic range
+should be 1.5E-45 and 5.0E-324 respectively.  (Not fixed in BP 7.)
+
+App.ISqr enters an endless loop for arguments greater than 32760.  (Not fixed
+in BP 7, but this bug doesn't affect operation in either version.)
+
+Graph.SetTextJustify doesn't properly account for descenders; they can
+be clipped at the bottom of the screen.
+
+BASM has the ranges of legal values incorrect for IN, OUT, INT, ENTER,
+AAM, AAD instructions. (Not fixed in BP 7.)
+
+BASM allows references to nonexistent registers on the coprocessor, e.g.
+FADD ST, ST(123456).  (Not fixed in BP 7.)
+
+The IDE doesn't properly single step across AAM xx and AAD xx
+instructions. (Not fixed in BP 7.)
+
+BASM doesn't do proper checking on CALLs and JMPs to near/far procedures
+or absolute variables, and sometimes doesn't generate proper code, e.g.
+ JMP FAR PTR AbsoluteVariable    { AbsoluteVariable is declared absolutely }
+ CALL FAR PTR AbsoluteVariable
+(fixed BP 7.)
+
+BASM doesn't flag the statements
+  MOV AX, [WORD]
+  MOV BYTE PTR AL,5
+as nonsense. (Fixed in BP 7.)
+
+The coprocessor emulator doesn't handle special arguments like INF and
+NaN properly.  Quiet NaNs are treated as signalling NaNs, and operations
+on INF return NaN. (Not fixed in BP 7.)
+
+The Random function will return 1.0 once every 2^32 calls in $N+ mode.
+This value should be folded to 0.0, so that Trunc(N*Random) can't return
+N.  (Fixed in BP 7.)
+
+TRect.Union and TRect.Intersect don't perform set operations.  If two
+rectangles don't intersect, TRect.Intersect always returns
+((0,0),(0,0)); the union of that empty rectangle with any other
+rectangle always includes the point (0,0).  (Not fixed in BP 7.)
+
+The Str procedure rounds nnn.5 differently than either the Round or
+Trunc functions when printing reals with no decimal places.  In $N-
+mode, it is inconsistent; in $N+ mode, it consistently rounds up.  (Not fixed
+in BP 7.)
+
+Feb 2, 1992:
+
+The Drivers.MoveBuf procedure puts junk into the buffer when Attr is 0.
+(A fix is available; see MOVEBUF.FIX in TP6BUGSn.ZIP.)  (Fixed in BP 7.)
+
+The Random(N) function doesn't produce a uniform distribution unless N
+is a power of 2, especially for large values of N. (Fixed in BP 7.)
+
+The Val procedure can't convert the smallest longint value, -2147483648,
+nor can is it handled properly by Read/Readln.  All routines work
+properly on the hex equivalent, $80000000.  (Fixed in BP 7.)
+
+The base type for a pointer type definition can't be a qualified
+identifier.  (Not fixed in BP 7.)
+
+The following TV bugs are more fully described (and fixes are given!) in
+the file TVBUGS in TP6BUGSn.ZIP:
+
+TFileEditor.NewBuffer allocates 0 bytes, but does not set BufSize
+to 0.
+
+If the search string given to Editors.IScan nearly matches the last
+chars in the text, the routine runs over the end of the text, eventually
+replacing text.
+
+TMemo cannot coexist in a TDialog with other objects having scrollbars,
+because TEditor.HandleEvent consumes all cmScrollBarChanged events.
+
+TEditor.InsertBuffer does not reset the block marker.  If a call to it
+is followed by a backspace, the block is deleted.
+
+If StdDlg.NoWildchars is called with an empty argument, it overwrites
+the stack.
+
+THelpTopic.AddCrossRef allocates memory and then forgets to use it.
+
+THelpIndex.Position returns garbage values if called with a negative
+argument.
+
+THistory.Draw uses characters 221 and 222 which are not standard outside
+codepage 437.
+
+December 3, 1991:
+
+TP doesn't handle the denormal exception properly on an 8087 or 80287,
+so underflow sometimes creates non-zero results.  (Not fixed in 6.01; not
+tested in 7).
+
+Compile time evaluation of the ROUND() function is different than
+run-time evaluation in $N+ mode on numbers ending in .5.  (Not fixed in
+BP 7.)
+
+Arithmetic on the REAL type is sometimes inaccurate in the last few bits
+of the result.
+
+The coprocessor emulator doesn't properly emulate the FINCSTP and
+FDECSTP instructions in BASM.  (These aren't used by compiled Pascal
+code.)  (Not fixed in BP 7.)
+
+The coprocessor emulator doesn't respect the precision control bits. (Not
+fixed in BP 7.)
+
+The SEG operator in BASM doesn't work on variables declared in the stack
+segment. (Not fixed in BP 7.)
+
+Referencing fields of records in BASM in a WITH block doesn't add the
+base address.  (Not fixed in BP 7.)
+
+BASM doesn't generate correct code for instructions like MOV AX,[WORD
+PTR BX]. (This is TASM Ideal mode syntax; MASM syntax MOV AX,WORD PTR
+[BX] is fine, as is MOV AX,[WORD PTR DS:BX].)  (Fixed in BP 7; ideal
+mode not accepted.)
+
+The Graph.TextWidth function returns incorrect results when fonts are
+scaled.
+
+October 31, 1991:
+
+The instruction "IMUL AX, 16" (valid on an 80186+) is rejected by BASM.
+The equivalent "IMUL AX, AX, 16" does work (in $G+ mode).  (Not fixed in
+BP 7.)
+
+October 26, 1991:
+
+If a byte variable X = 0, then (X-1) DIV 8 produces a zero divide error.
+Fixed June 91 & in BP 7.
+
+October 23, 1991:
+
+Hitting tab on a help topic with no crossrefs will crash the help
+system.  A patch to HELPFILE.PAS is available from Borland.
+
+October 17, 1991:
+
+The coprocessor emulator does not respect the rounding bits internally
+or when storing results to Single or Double variables. (Not fixed in BP
+7.)
+
+October 11, 1991:
+
+Segments in external .OBJ files with no class names (e.g. ABSOLUTE
+segments) will crash TURBO, TPC or TPCX.  (Fixed in BP 7.)
+
+September 16, 1991:
+
+The IDE will give incorrect matches when doing word searches on words at
+the start of lines (e.g. "Const" matches "onst").  (Fixed June 91 & in
+BP 7).
+
+The compiler won't allow the optional identifier in a variant record to
+be an already defined scalar type identifer.  (Not fixed in BP 7.)
+
+The compiler gives spurious errors if you nest loops very deeply (e.g.
+256 deep). (Fixed in BP 7.)
+
+
+August 16, 1991
+
+You can use typed constants and variables in constant expressions,
+giving garbage values.  (Fixed June 91 and in BP 7.)
+
+The coprocessor emulator doesn't check properly for internal stack
+overflow; it just wraps around and trashes the top of the stack segment.
+(Fixed in BP 7.)
+
+Succ(Seg(v)) = Seg(v)  and Pred(Seg(v)) = Seg(v) !  (Fixed June 91 and in
+BP 7.)
+
+TBufStream writes garbage to the stream sometimes.  (A patch for this is
+included in TP6BUGSn.ZIP as TBUFSTRE.FIX.).  (Fixed in BP 7.)
+
+IN doesn't properly handle out of range values.  (What it does is to
+demote out of range scalars to byte, ignoring any high bits.) Not fixed.
+
+Referencing fields of records in inline machine code sometimes makes the
+compiler go quietly insane.  (Fixed in BP 7.)
+
+Coprocessor errors are often reported at the wrong address, especially
+if the error occurs on the first pass through. (Fixed in BP 7, but new bug
+introduced!)
+
+GetDir returns a root directory for non-existent drives.  (This is
+almost as documented.)
+
+Horizontal text justification to the right side doesn't work if the
+writing direction is vertical; this is only in the DefaultFont.
+
+Intr and MsDos don't always work properly in V86 mode under Windows 3,
+because they don't use the INT instruction.
+
+The TVEdit unit can't input some digits.  (A patch for this is
+included in EDITOR.FIX in TP6BUGSn.ZIP.) Fixed in June 91.
+
+^T in TVEdit sometimes deletes more than the next word.  (This is by
+design, but inconsistent with the design of the IDE.)
+
+^QF followed by ^L followed by Space deletes words in TVEdit.  (This is
+also by design.)
+
+TProgram doesn't clean up memory properly on exit.  (Fixed in BP 7.)
+
+TFileViewer's FileName field is never disposed.
+
+The IDE forgets your snow check setting if you jump to DOS and exit
+back.
+
+Writeln wipes out the status word in the coprocessor. (Not fixed in BP 7.)
+
+You can allocate an array bigger than 65528 bytes on the heap; it may
+wrap around and trash whatever precedes it.  (Not fixed in BP 7.)
+
+The coprocessor emulator doesn't propagate NaNs the same way as a real
+coprocessor does. (Not fixed in BP 7.)
+
+The string conversion routines sometimes print NaNs as INF.
+
+Complicated expressions involving Reals compiled $N+ will unnecessarily
+overflow the coprocessor stack (and trigger the dangerous error above).
+(Not fixed in BP 7, but the dangerous error is gone.)
+
+The $G+ option makes the inline assembler use inline floating point
+code, rather than the CD forms that allow emulation. (Fixed in BP 7.)
+
+Graph3.Plot leaves a word on the stack; if you call it repeatedly, you
+may get a stack overflow; if you call it from a routine that doesn't
+have any locals, you're dead.  Fixed in June 91.
+
+Some weird problems with F7 Trace; sometimes it just refuses to do it.
+
+There are certain illegal Extended encodings that crash the debugger in
+TURBO. (Not fixed in BP 7!!)
+
+Range checking shouldn't apply to the limits in a for loop. (Not fixed in BP
+7.)
+
+Method arguments shouldn't be at the same scoping level as method names.
+
+The compiler exports private identifiers in .TPU files (though you can't
+use them).
+

@@ -1,0 +1,23 @@
+
+#: 177943 S1/Turbo Vision  [BPASCAL]
+    18-Nov-92  16:27:17
+Sb: #177813-TFileDialog broken?
+Fm: Mark Edington (Borland) 75140,2240
+To: dj murdoch 71631,122
+
+Duncan,
+
+   Here is a fix which you can apply to STDDLG.PAS:
+
+On line 947:
+
+Change:
+
+  RelativePath := not (S <> '') and ((S[1] = '\') or (S[2] = ':'));
+
+to:
+
+  RelativePath := not ((S <> '') and ((S[1] = '\') or (S[2] = ':')));
+
+Mark
+

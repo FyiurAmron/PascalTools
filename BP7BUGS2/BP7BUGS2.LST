@@ -1,0 +1,207 @@
+BP7BUGS2.LST - Version 2 of BP 7.0 bug list
+
+This is the second edition of my completely *un*official list of bugs in
+BP 7.0.
+
+There are more limitations to this list than there were to the previous
+lists, because BP 7.0 is a lot bigger than TP 6.0.  I'm unable to test
+most Windows bugs, so they probably won't end up in this list.  Most of
+my work is in real mode, so there's a definite bias towards bugs there.
+Finally, I have stopped collecting TurboVision bugs, now that Brad
+Williams has started maintaining a TV bug list.  See the file TVBUGS.LST
+for instructions on how to get a copy of his list.
+
+Bugs which have been fixed in the March 1993 BP 7.01 maintenance release
+have been removed from the main list, and are included only in the file
+700.LST. (To get a copy of the maintenance release, call Borland
+customer service. They charge $10 for shipping.) If you're interested in
+TP 6 bugs, look for TP6BUGS7.LST, the final release of my TP 6 bug list.
+
+I'm sure there are errors in this list, and some things that I call bugs
+are "design limitations" or "as designed".  Don't rely on any of the
+fixes; none of them are official (even if they look like they come from
+Borland); only Borland can give you official fixes.  If you want a
+reliable list, write to Borland (in particular Zack Urlocker, at
+Compuserve address 76217,1053 or Internet address
+76217.1053@compuserve.com) and complain.  Professional tools deserve
+professional support; a secret bug list, or one maintained by an
+amateur, is not professional support.
+
+The list is very abbreviated;  if any of the items are too obscure, ask
+and I'll expand on them.  One abbreviation I've been asked about:
+"BASM" is the built-in assembler used in asm blocks.
+
+The bugs reported here are gleaned from reports from dozens of people.
+In particular, Gary Wiltshire sent me reports on several new BGI bugs.
+
+Bugs in the list are numbered in order from oldest to newest.  However,
+bugs 1 to 27 are taken from the last TP 6 list; those are more or less
+in newest to oldest order, because I was too lazy to reverse the list.
+
+I'd appreciate it if anyone sent me their own bug reports and bug list;
+I'll publicize it on Usenet, Fidonet and Compuserve. I'd also appreciate
+hearing about patches.  Please send demonstration code along with your
+report; I don't like to put bug reports here unless I can reproduce
+them.  If you don't have access to any of the sources above, I don't
+know how you came across this file; but I'll send you the latest version
+on diskette if you send me $10 (US or Canadian).  I'll also fill up the
+diskette with various utilities and things I've written; let me know if
+there's any particular type you're interested in.
+
+Duncan Murdoch
+
+ dmurdoch@mast.queensu.ca  (Internet address)
+ 71631,122                 (Compuserve)
+ DJ Murdoch at 1:249/1.5. (Fidonet)
+
+ 337 Willingdon Ave.
+ Kingston, Ontario, Canada
+ K7L 4J3
+
+------ Leftover bugs from TP 6 --------
+
+1.  The string formatting routines get the 19th digit wrong on very
+large Comp numbers.
+
+2.  Actual heap allocation can be 511 bytes more than the maximum
+specified in the $M directive.
+
+4.  The compiler doesn't detect overlapping case constants.  Only the
+first matching case is executed.
+
+5.  Single and Double types typed constants are not correctly
+initialized for absolute values smaller than 1.17xxxxE-38 respectively
+2.22xxxxE-308 (their value wil be zero instead).  The lower limit of the
+dynamic range should be 1.5E-45 and 5.0E-324 respectively.
+
+6.  BASM has the ranges of legal values incorrect for IN, OUT, INT, ENTER,
+AAM, AAD instructions.
+
+7.  BASM allows references to nonexistent registers on the coprocessor,
+e.g. FADD ST, ST(123456).
+
+8.  The IDE doesn't properly single step across AAM xx and AAD xx
+instructions.
+
+9.  The coprocessor emulator doesn't handle special arguments like INF
+and NaN properly.  Quiet NaNs are treated as signalling NaNs, and
+operations on INF return NaN.
+
+10. TRect.Union and TRect.Intersect don't perform set operations.  If
+two rectangles don't intersect, TRect.Intersect always returns
+((0,0),(0,0)); the union of that empty rectangle with any other
+rectangle always includes the point (0,0).
+
+11. The Str procedure rounds nnn.5 differently than either the Round or
+Trunc functions when printing reals with no decimal places.  In $N-
+mode, it is inconsistent; in $N+ mode, it consistently rounds up.
+
+12. The base type for a pointer type definition can't be a qualified
+identifier.
+
+13. Compile time evaluation of the ROUND() function is different than
+run-time evaluation in $N+ mode on numbers ending in .5.
+
+14. The coprocessor emulator doesn't properly emulate the FINCSTP and
+FDECSTP instructions in BASM.  (These aren't used by compiled Pascal
+code.)
+
+15. The coprocessor emulator doesn't respect the precision control bits.
+
+16. The SEG operator in BASM doesn't work on variables declared in the
+stack segment.
+
+17. Referencing fields of records in BASM in a WITH block doesn't add the
+base address.
+
+18. The instruction "IMUL AX, 16" (valid on an 80186+) is rejected by BASM.
+The equivalent "IMUL AX, AX, 16" does work (in $G+ mode).
+
+19. The coprocessor emulator does not respect the rounding bits internally
+or when storing results to Single or Double variables.
+
+20. The compiler won't allow the optional identifier in a variant record to
+be an already defined scalar type identifer.
+
+21. IN doesn't properly handle out of range values.  (What it does is to
+demote out of range scalars to byte, ignoring any high bits.)
+
+22. Writeln wipes out the status word in the coprocessor.
+
+23. You can allocate an array bigger than 65528 bytes on the heap; it may
+wrap around and trash whatever precedes it.
+
+24. The coprocessor emulator doesn't propagate NaNs the same way as a real
+coprocessor does.
+
+25. Complicated expressions involving Reals compiled $N+ will unnecessarily
+overflow the coprocessor stack.
+
+27. Range checking shouldn't apply to the limits in a for loop.
+
+------- New bugs in BP 7 --------
+
+28. Coprocessor errors are reported with the address normalized, but the
+IDE can't find source lines with errors specified that way.  Use the
+command line compilers with /F ssss:oooo to find them.
+
+30. On a 386, interrupt routines must explicitly save the extended
+registers EAX through to EDX or risk corrupting longint calculations and
+other programs.
+
+31. On a 386, longint calculations are unreliable in environments which
+don't preserve the extended registers.  So far, the only such
+environments that I've heard of are systems running Novell's
+non-dedicated file server version 2.2, which trashes EAX every timer tick.
+(A detector and protection scheme is available in TRASHSRC.ZIP.  A quick
+fix is just to set Test8086=0 at the start of your program.)
+
+35. Spurious compiler arithmetic overflow errors are generated in
+constant expressions containing products of negative numbers with zero.
+
+36. If a running program changes a file that's currently loaded in the
+IDE, when you exit you'll lose the IDE version no matter how you answer
+the dialog about which version to keep.
+
+39. Coprocessor exceptions aren't handled properly in protected mode.  BP and
+TDX are likely to be aborted by the error. Things are worse within Desqview,
+but that may be a Desqview bug.  Partially fixed in 7.01 - things are fine
+in DOS, they don't work in Windows or Desqview.
+
+40. In TURBO.EXE and BP.EXE, ^KR sometimes gives a junk error message
+about the file being a device if it doesn't exist (after the correct message).
+
+41. The ATT400.BGI driver is apparently messed up.  According to reports (I
+haven't tested this one) the TP 6 driver works fine.
+
+42. When written vertically, the bitmap fonts are aligned differently from the
+stroked fonts.  The bitmaps are aligned with the bottom of the letters, the
+stroked fonts with the tops.  Horizontally, both are aligned with the tops.
+
+45. Some versions of OS/2 come with a buggy mouse driver that won't allow
+programs run from the IDE under OS/2 to use the mouse.  A fix is supposed to
+be available from IBM.
+
+47. Contrary to the online help, Release() does not work in protected mode.
+(This is documented in the Language Guide.)
+
+------ New in release 2 of this list ----------------
+
+48. On certain machines, protected mode programs (including BP.EXE) will not
+read characters correctly. (E.g. repeated cursoring will insert digits into
+your text.)  Sometimes running "KEYB US" before BP fixes it; there are some
+rumours that Quarterdeck's QDPMI or other bad DPMI servers may be at fault;
+there are other rumours that it's a bad keyboard controller chip causing the
+trouble.
+
+50.  If a graphics driver (.BGI file) that you load manually isn't
+loaded at an address with offset 0, then registering it and calling initgraph
+twice will sometimes make your program abort.
+
+51.  (A leftover from TP6 that I forgot.)  The Graph.TextWidth function
+returns incorrect results when fonts are scaled.
+
+52.  In protected mode when using BGI, using RestoreCRTMode and
+SetGraphMode can leave BGI in an unstable state, and a GP fault may follow.
+
+

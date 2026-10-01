@@ -1,0 +1,135 @@
+INTRFC - Program to print interface information for TPU files.
+(May, 1988; minor changes, July, 1988)
+
+Written for the public domain by D.J. Murdoch (CIS 71631,122 or
+Fidonet 1:221/177.40 "DJ Murdoch")
+
+INTRODUCTION
+
+     I started INTRFC because I got a library of Turbo Pascal 4.0
+subroutines from a bulletin board which had some errors in the
+documentation.  One of the functions wanted its arguments to be a
+special type, but the doc's didn't tell me which one.  TP gave me
+an error message saying I wasn't using the right type, but
+wouldn't tell me which one to use either.  I decided to decode
+the TPU file and figure out what TP wanted.  Once I got started,
+it was hard to stop.  So, I ended up writing INTRFC, which prints
+out almost all the information you'll ever need about the
+interface to a TPU unit.  (You can also get information about
+units in TPL's; use TPUMOVER to move them out into a TPU first.)
+
+     Because of the way it was written, i.e. entirely by
+guesswork, I'm sure there are numerous special cases that it
+doesn't handle properly.  That's one reason the source code is
+there - so other people can fix up my mistakes.
+
+     The other reason I included source code is because it will
+serve as a bit of documentation for the TPU file format while we
+all wait for Borland to publish it.  (I imagine they want to be
+free to change the format before they publish it, making INTRFC
+obsolete when TP 4.1 arrives.)  Others who want to do completely
+different things to a TPU file may benefit from reading it.  (The
+other difficulty with a program written the way this one was is
+that comments are almost non-existent.  If you have any short
+questions about it that you can't figure out, send them to me at
+one of the addresses above.)
+
+USAGE:  INTRFC [unit path]
+
+     The user interface (sorry!) to INTRFC is really primitive.
+Just run it without any arguments, and answer the prompt for a
+unit.  Don't type the ".TPU".  It expects to find any referenced
+(i.e. USE'd) units in the current directory.  Or, if you like,
+specify a path on the command line where it can find the other
+units.  (It needs to look in them for names and types sometimes).
+This path should also contain the TURBO.TPL file containing the
+system units.
+
+    After it prints the interface to the unit you specify, it
+will ask for another one.  To quit, you'll have to hit break or
+Ctrl-C. (F6 or Ctrl-Z might also work, by crashing it.)  Both
+input and output can be redirected using "<" and ">".  (Watch out
+though, the prompts get redirected too.  I warned you it was
+primitive.)
+
+TPU STRUCTURE
+
+    Below are some notes on the general structure of a TPU file.
+For more detail, see the source code.  When I named something
+there with a totally obscure name (like i1, or ofs1) it generally
+meant that I don't have any idea what it was for.
+
+    There are four parts to a TPU file - the symbol area, the
+code area, the relocation area, and the data area.  (TPUMOVER
+will tell you how big each is.)  INTRFC only looks at the symbol
+area.
+
+    At the start of it, there's a table giving sizes and offsets
+of important parts of the file.  Most important is the hash table
+- it gives the addresses (16 bit pointers) of many of the objects
+that are defined in the interface block.  (The hash function
+seems to be a simple one.  Letters A-Z and a-z get mapped to 0-
+25, underscores and digits get their ascii codes, and longer
+strings get the sum of the codes of their characters, modulo the
+table size).  In case of a collision (i.e. hash(object 1) =
+hash(object 2) ), there's a pointer at the beginning of each
+object to the next one with the same hash value.
+
+    Things being defined are stored in variations on 2 or 3
+kinds of record.  The main storage is as what I call an Object.
+This gives a pointer to the next object with the same hash
+number, the name of the object, and is followed by the
+Information.  The Information defines what "kind" of object this
+is, i.e. a variable, type, constant, etc.  It also gives some
+information about the object, often including references to the
+third kind of record, the Type Definitions.  These are like
+Information records, subdividing the various types, e.g. array,
+string, set, etc.
+
+    All variables have an offset.  If they are part of a record,
+this is the offset within the record.  If not, then I assume
+these are the offsets in the data segment (but haven't checked).
+
+TPL STRUCTURE
+
+    TPL files have a very simple structure.  They seem to be just
+a collection of TPU files strung together.  (The header might be
+slightly varied; I'm not sure.)
+
+    Borland provides the TPUMOVER program which can extract TPU
+files from TPL files.  Either use the command line /* option or
+mark the unit you want in full-screen mode and use INS to extract
+it.
+
+LIMITATIONS
+
+    There are tons of limitations to INTRFC.  It doesn't know how
+to print any but the simplest types of constants.  It won't print
+the values of typed constants.  It won't read files bigger than
+64K.  Etc. Etc. Etc.  If you want it to do something differently
+just go ahead and change it!  I recommend compiling with all
+possible checks turned on, since it's pretty easy to get lost in
+all those pointers.
+
+FILES
+
+The following files should be included in this package.
+
+INTRFC.DOC      - This file.
+INTRFC.EXE      - The executable program.
+GLOBALS.PAS     - The global declarations.
+HASH.PAS        - The routines to walk through the hash table, and
+                  to get units
+INTRFC.PAS      - The main program.
+OBJSTUFF.PAS    - The various routines for printing objects.
+TEST1.PAS       - A test unit.
+UTIL.PAS        - Various utility routines.
+
+THAT'S IT!
+
+     Have fun with INTRFC and Turbo Pascal.  I'd like to hear of
+any novel uses.
+
+D.J. Murdoch
+
+

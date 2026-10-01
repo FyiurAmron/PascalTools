@@ -1,0 +1,31 @@
+The DisposeNode procedure in the Outlines unit neglects to dispose of the
+Text string allocated by NewNode.  This means that disposing of a POutline
+object leaves all the strings sitting in memory.  It's also got redundant
+tests to avoid disposing of a nil pointer.
+
+It should be fixed as follows.  Change from:
+
+ procedure DisposeNode(Node: PNode);
+ begin
+  if Node <> nil then
+    with Node^ do
+    begin
+      if ChildList <> nil then DisposeNode(ChildList);
+      if Next <> nil then DisposeNode(Next);
+    end;
+  Dispose(Node);
+to:
+
+ procedure DisposeNode(Node: PNode);
+ begin
+  if Node <> nil then
+    with Node^ do
+    begin
+      DisposeNode(ChildList);
+      DisposeNode(Next);
+      DisposeStr(Text);
+      Dispose(Node);
+    end;
+ end;
+
+

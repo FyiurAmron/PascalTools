@@ -1,0 +1,29 @@
+From terra@ask.diku.dk Sun Nov 29 15:27:26 1992
+To: dmurdoch@mast.QueensU.CA (Duncan Murdoch)
+Subject: Re: TP7 bug -- SHR/SHL for longints
+
+
+Two substitute routines follow:
+
+@@shr:	shl	edx,10h		; (dx:ax) shr (cl and 31)
+	mov	dx,ax		; edx now holds operand
+	shr	edx,cl
+	mov	ax,dx
+	shr	edx,10h
+	ret
+
+
+@@shl:	shl	edx,10h		; (dx:ax) shl (cl and 31)
+	mov	dx,ax		; edx now holds operand
+	shl	edx,cl
+	mov	ax,dx
+	shr	edx,10h
+	ret
+; -----------------------------------------------------
+(Shifts have never been significant to more 32 bits.)
+
+
+Morten Welinder
+terra@diku.dk
+
+

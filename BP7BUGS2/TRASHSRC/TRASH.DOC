@@ -1,0 +1,93 @@
+TrashDet, TrashRep, TrashFix and Prot386 - Trash detection and repair
+   by D.J. Murdoch
+
+SYNTAX:
+
+  TRASHDET
+    installs TSR detector
+  TRASHREP
+    gives report of which registers have been trashed, if any
+  TRASHFIX
+    fixes trashing of EAX, EBX, ECX, EDX, ESI, EDI, EBP, FS and GS by
+    any of the 16 standard hardware interrupts
+
+DESCRIPTION:
+
+Borland Pascal 7 introduced 32 bit arithmetic for longints, which gives
+a performance boost over 16 bit arithmetic.  Unfortunately, it's not
+safe on some PCs: those running software that trashes the extended
+registers.
+
+The best fix for this would be to replace that buggy software, but
+that's not an option in most cases.  An alternative would be to install
+a TSR that saved and restored the trashed registers, but to do that, you
+really need to the details of which registers get trashed and by what.
+
+Figuring that out is the purpose of TrashDet.  It installs interrupt
+handlers on all 16 hardware interrupts (08 thru 0F, and 70 thru 77).  It
+counts how often the high word of registers EAX, EBX, ECX, EDX, ESI,
+EDI, or EBP, or the segment registers FS or GS get  modified by the
+interrupt handler.  These registers should *never* be modified, so any
+report signals a bug in the interrupt service routine that was in place
+before TrashDet.  (All of this in 608 bytes of memory when resident -
+not bad for a TSR written in TP, is it? :-)
+
+TrashRep is a simple report program to look in the TrashDet tables, and
+report if any errors have been detected.  It reports the error counts.
+Note that since single bytes are used for the counting, the counts roll
+over at 256.
+
+As a side benefit, TrashDet restores the trashed registers, so it could
+be used as a stopgap repair - but a much smaller and faster TSR could be
+written to handle only the cases reported by TrashRep.
+
+TrashFix is a somewhat smaller and faster general fixup TSR.  It's
+almost the same as TrashDet, but doesn't do any counting of cases where
+the fixup was necessary.  (In fact, the two programs share the same
+source code, with only a compiler conditional define to separate them.)
+It hooks interrupts 08 thru 0F and 70 thru 77, and saves and restores
+the top word of the registers EAX, EBX, ECX, EDX, ESI, EDI and EBP, and
+segment registers FS and GS. (TrashFix takes only 480 bytes of memory
+when resident. :-)
+
+I've also included a BP 7 unit (PROT386.PAS) that installs a streamlined
+version of TRASHFIX just for the duration of a TP program.  This version
+only saves the high words of EAX thru EDX; those are the only extended
+registers used by TP programs.
+
+SOURCE CODE
+
+Full source code for TrashDet and TrashFix is supplied in Trashdet.pas,
+and for TrashRep in Trashrep.pas.  Feel free to modify these to suit
+your own requirements.  Please let me know (see below for how) if you
+notice any bugs.
+
+OTHER PROGRAMS
+
+Just for fun, I've included a program (MESS386) that messes up the extended
+registers, and another (TEST) that shows this does to longint calculations.
+On my 486-33, it prints errors about 2 or 3 times a minute.  Uncomment the
+"uses prot386" line in TEST.PAS and recompile, and you shouldn't see any
+errors at all.
+
+
+LICENSE
+
+I've donated these programs to the public domain, so there's no legal
+license needed at all.  However, I place the following moral requirement
+on any user:  if TrashDet ever helps you to detect that an ISR is
+trashing the extended registers, you must make an effort to determine
+which program has the bug, and inform the author of the program and any
+other users you can contact.  If it's a widely distributed commercial
+program, I'd also appreciate hearing about it.
+
+I can be contacted at the following addresses:
+
+   Internet:    dmurdoch@mast.queensu.ca
+   Compuserve:  71631,122
+   Fidonet:     DJ Murdoch at 1:249/99.5
+   Postal:      D. J. Murdoch
+                337 Willingdon Ave.
+                Kingston, Ontario, Canada
+                K7L 4J3
+

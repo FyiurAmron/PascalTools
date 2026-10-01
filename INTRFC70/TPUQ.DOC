@@ -1,0 +1,105 @@
+This is an outline of the structure of the Borland Pascal 7.0 and Turbo
+Pascal 7.0 TPU file format.  They use the same format for TPU, TPP, TPW
+file, with signature TPUQ.
+
+There are six sections; the first one has ten subsections.  Each
+section is limited to 64K in size.
+
+I. SYMBOL SECTION
+
+This section contains all the symbolic information, and has several
+subsections.
+
+The size is given in header.symsize.  Actual size in file is rounded up
+to next even paragraph, as are all the sections.
+
+A. Header subsection (/H turns display on)
+
+Contains sizes, pointers, flags, and signature TPUQ.  Structure given in
+HEAD.PAS. About $60 bytes, but it's not clear where it ends - the last
+part is always zeroed.
+
+B. Object subsection (/N turns display off, or /I turns full display on)
+
+An unfortunate choice of a name:  this section contains all the symbolic
+information, not just for Objects.  It contains one or two hash tables
+to get access to the various objects:  the interfaced objects are
+available from the one at ofs_hashtable, all debuggable ones are
+available from the one at ofs_full_hash.  There are also other smaller
+hash tables:  members of records, locals to functions/procedures, etc.
+HASH.PAS decodes the hash table.
+
+There are basically two types of records:  obj_rec's and type_def_rec's.
+Obj_rec's give the name and "type", and are followed by specialized
+information describing the object.  Type_def_rec's give constructions
+for type definitions.  Both are given in NAMELIST.PAS and NAMETYPE.PAS,
+though the type_def_rec's should be handled by their own unit.
+
+C. Entry point subsection (/E turns display on)
+
+This is an array of fixed length records, one per
+function/procedure/method in the unit.  It gives the code block of the
+routine, and the entry point within that code block.  The first entry is
+for the initialization section of the unit.
+
+D. Code block subsection (/D turns display on)
+
+This is an array of fixed length records, one per block of code
+(usually, one per routine, but .OBJ files get just one block).
+
+E. Const block subsection (/C turns display on)
+
+Another array of fixed length records, one per block of initialized
+data. (This will be a typed Const declaration, or the VMT of an object.
+
+F. Var block subsection (/V turns display on)
+
+The same sort of thing for uninitialized static data.
+
+G. Exported names subsection (/W turns display on)
+
+This section appears only in TPP or TPW files.  It gives a table
+of external names for links to Dynamic Link Libraries.
+
+H. Unit list subsection (/U turns display on)
+
+All units on which this one depends are listed, in variable length
+records.
+
+I. Source names subsection (/S turns display on)
+
+This section lists the source files, and .OBJ files that were linked
+into this unit.
+
+J. Line lengths subsection (/M turns display on)
+
+If debugging is turned on, the records here give the correspondence
+between source code lines and bytes in the code blocks.
+
+
+II. CODE SECTION (/B turns display on)
+
+This section contains the compiled object code, in the order listed in
+the code block subsection above.  It seems there is none
+separation between blocks.
+
+III. CONST SECTION (/G turns display on)
+
+The initialized data, in the order of the const blocks.
+
+IV. CODE RELOCATION RECORDS (/R turns display on)
+
+A big array of fixed length records, giving the relocation fixups for
+the code blocks.
+
+V.  CONST RELOCATION RECORDS (/O turns display on)
+
+An array in the same format as IV, giving the relocation fixups for the
+const blocks.  Used for fixups for the VMT tables of objects, and
+initialized pointer constants.
+
+VI. BROWSER SYMBOL INFORMATION (/Z turns display on)
+
+Appears only when compiled with symbol information turned on {$Y+}.
+Symbol information consists of tables that provide line numbers
+of all declarations or references to symbols in a module.

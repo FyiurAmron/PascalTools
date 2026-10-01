@@ -1,0 +1,930 @@
+From @ugw.utcs.utoronto.ca:INJS@DCZTU1.BITNET Tue Nov 19 10:55:08 1991
+Return-Path: <@ugw.utcs.utoronto.ca:INJS@DCZTU1.BITNET>
+Received: from ugw.utcs.utoronto.ca by math.carleton.ca (4.1/SMI-4.0)
+	id AA09948; Tue, 19 Nov 91 10:54:44 EST
+Received: from IBM.RZ.TU-CLAUSTHAL.DE by ugw.utcs.utoronto.ca with BSMTP id <23337>; Tue, 19 Nov 1991 10:48:09 -0500
+Received: from DCZTU1 (INJS) by IBM.RZ.TU-CLAUSTHAL.DE (Mailer R2.08) with
+ BSMTP id 2142; Tue, 19 Nov 91 11:18:49 MEZ
+Date: 	Tue, 19 Nov 1991 05:10:38 -0500
+From: Juergen Schlegelmilch <injs%dcztu1.bitnet@utcs.utoronto.ca>
+Subject:      Re: TP6.0 bug list
+To: Duncan Murdoch <dmurdoch@math.carleton.ca>
+In-Reply-To:  Your message of Wed, 30 Oct 1991 08:37:43 -0500
+Message-Id: <91Nov19.104809est.23337@ugw.utcs.utoronto.ca>
+Status: OR
+
+>Thanks, modifications to tvdemos programs would be fine.  If you can, please
+>package up the whole program; a "diff" file would be hard to apply since I
+>have a different version of the files than you do.  It'll also make it clearer
+>which bugs have been addressed in the June 91 release.
+Now I'm ready. Since there is one program being very similar to TVEDIT.PAS
+I just gave the additions to that file. Including the whole file would be
+a waste of space.
+
+>> >bugs@borland.com).  Have you already done that?
+>> No.
+>I'll wait for you demonstration code then, and send it myself.
+Meanwhile I got the address of Sydney Markowitz (sydney@borland.com)
+and sent him the list. You can send it to bugs@borland.com anyway.
+And now the list:
+
+Bugs in TurboVision and TurboPascal 6.0
+ This file contains a collection of bugs found in Borland's
+TurboPascal 6.0 compiler and the TurboVision units. Each
+bug is described in the following form:
+
+   Bug: procedure/function name (Unit name)
+     short description explaining the context and effect
+   Example:
+     sample Pascal text or name of file, with instructions
+     how to see the bug in effect. CAUTION: some bugs will
+     cause the system to hang, so be sure to save all your
+     important data.
+     Some of the sample programs are appended to this text,
+     separated by lines like:
+         ---------  FILENAME.PAS  -------------------
+     One of them, EDIT.PAS, is derived from TVEDIT.PAS
+     and TVDEMO.PAS (both by Borland). So I added a
+     description how to generate it, instead of the
+     whole file.
+   Fix:
+     Replacement/addition for the buggy routine
+
+   Some improvements are added, in a similar form.
+
+
+Bug: procedure TFileEditor.InitBuffer (Unit Editors)
+  TFileEditor.NewBuffer allocates 0 bytes, but does not set BufSize
+  to 0. Now, if TFileEditor.Load loads a TFileEditor from a stream,
+  BufSize is read from the stream, too, and has its old value.
+  InitBuffer (called by TEditor.Load) ignores it, so the content
+  of the editor is loaded into memory, which was never allocated
+  -> the program will crash. So you can't use TFileEditors, if you
+  store and load the desktop.
+Example:
+  Compile the file EDIT.PAS to disk and start it. Open two edit
+  windows via File!New, type in some text and save them. Do not
+  close the windows! Save the desktop with Windows!Save desktop,
+  then reload it with Windows!Retrieve and type a single key:
+  The actual edit window will show some weird chars in the
+  beginning of the first line. Edit the text in one window and
+  then select the other one; watch the effects. If you exit the
+  program, sometimes your system hangs because of corrupted
+  memory control blocks.
+Fix:
+  procedure TFileEditor.InitBuffer;
+  begin
+    NewBuffer(Pointer(Buffer));
+  (* Bugfix 13.05.91 JS: consider BufSize! TEditor.InitBuffer
+     allocates BufSize bytes, this routine allocates 0 Bytes,
+     but does not set BufSize to the correct value. If BufSize
+     is <>0 (e.g. after TEditor.Load from a stream), the pro-
+     gram will crash. *)
+    BufSize:=0;
+  end;
+
+
+Bug: function IScan (Unit Editors)
+  In this assembly-routine the programmer forgot, that MOV does
+  not set the flags. If the search string nearly matches the last
+  chars in the text, the routine runs over the end of the text --
+  eventually replacing text! Here is an example:
+    Let '123456' be the text, and search for '45z'.
+    The routine scans the text '1234' for the '4' and finds it:
+         123456
+            45z
+    Then it compares the rest, finds the difference and skips
+    this occurence. CX (number the chars left in the text) is
+    now 0, but the routine just MOVs it back from DX, jumping
+    then with JNE. Now it is behind the end of text!
+Example:
+  TVDEMO\TVEDIT.PAS. Open a new edit window and type "123456"
+  without the quote marks. Do not terminate the line with
+  Enter! Press the Home key, then Ctrl-Q F to invoke the Find
+  dialog. Enter "45z" as search text (without the quote marks)
+  and press Enter (Case sensitivity is unselected by default):
+  Your system hangs (sometimes wrong occurences are shown, or
+  the search wraps around).
+Fix:
+  (* Comment: The only change needed is the line marked with ***.
+     But for better use of TEditor objects outside the USA and
+     GB, it's better to use the DOS codepage (MSDOS3.X or higher
+     required) for case conversion. *)
+
+  { Improvement JS: UpperCase uses DOS codepage }
+  procedure DOSUpCase; assembler;
+  { a dummy to get a pointer in the codesegment }
+  asm
+          DD 0
+  end;
+
+  function UpperCase:Char ; assembler ;
+  { changes lower case to upper case letters, using DOS codepage.
+    does not need DS to point to Turbo's global data segment.
+    input : AL char
+    output: AL upper case of it }
+  asm
+          CMP  AL,'a'           { normal lower case chars.. }
+          JB   @@1
+          CMP  AL,'z'
+          JBE  @@4              { .. get normal treatment. }
+          DB   $2E,$FF,$1E      { this is a CALLF [cs:] }
+          DW   DOSUpCase        { all others are converted using }
+          JMP  @@1              { the DOS codepage }
+  @@4:
+          SUB AL,20H
+  @@1:
+  end ;
+
+  function UpCase(c:Char): Char; assembler;
+  { should be exported, i.e. included in interface }
+  asm
+          MOV   AL,c
+          CALL UpperCase
+  end;
+
+  function IScan(var Block; Size: Word; Str: String): Word; assembler;
+  var
+    S: String;
+  asm
+          PUSH  DS
+          MOV   AX,SS           { copy the Str to S, converting it.. }
+          MOV   ES,AX           { to upper case }
+          LEA   DI,S
+          LDS   SI,Str
+          XOR   AH,AH
+          LODSB                 { copy string length }
+          STOSB
+          MOV   CX,AX
+          MOV   BX,AX
+          JCXZ  @@9
+  @@1:    LODSB                 { load each char from Str.. }
+          CALL  UpperCase       { get upper case of it.. }
+          STOSB                 { and store it to S }
+          LOOP  @@1
+          SUB   DI,BX           { goto beginning of S (without length byte) }
+          LDS   SI,Block
+          MOV   CX,Size
+          JCXZ  @@8
+          CLD
+          SUB   CX,BX           { no need to examine the last chars in..}
+          JB    @@8             { Block, the search string won't fit }
+          INC   CX
+  @@4:    MOV   AH,ES:[DI]      { search for the first char of search string }
+  @@5:    LODSB
+          CALL  UpperCase
+          CMP AL,AH             { compare chars from Block with first char.. }
+          LOOPNE @@5            { of search string until found }
+          JNE   @@8             { no occurence -> goto end }
+          DEC   SI              { compare the whole search string }
+          MOV   DX,CX           { save number of remaining bytes in Block }
+          MOV   CX,BX           { get search string length }
+  @@6:    REPE  CMPSB           { exact match.. }
+          JE    @@10            { up to end of search string -> success }
+          MOV   AL,DS:[SI-1]    { else: }
+          CALL  UpperCase       { compare upper case }
+          CMP   AL,ES:[DI-1]
+          JE    @@6             { matches -> continue }
+          SUB   CX,BX           { else compare failed; restore pointers.. }
+          ADD   SI,CX           { in Block.. }
+          ADD   DI,CX           { and search string }
+          INC   SI
+          MOV   CX,DX           { restore number of remaining bytes in Block }
+          OR    CX,CX           { *** MOV does not modify the flags! }
+          JNE   @@4             { zero remaining bytes -> end }
+  @@8:    XOR   AX,AX           { end without success: return 0 }
+          JMP   @@11
+  @@9:    MOV   AX, 1           { end with empty search string:.. }
+          JMP   @@11            { pointer to next char }
+  @@10:   SUB   SI,BX           { end with success: return pointer to.. }
+          MOV   AX,SI           { found occurence }
+          SUB   AX,WORD PTR Block
+          INC   AX
+  @@11:   DEC   AX              { set correct range of AX for BOOLEAN }
+          POP DS
+  end;
+
+  { an init routine, replacing the END. at the end of EDITORS.PAS: }
+  const RetFar:Byte=$CB ;
+  var i: Integer;
+  begin
+    { Improvement JS: UpperCase uses DOS codePage }
+    asm
+              push  ds
+              mov   ds,PrefixSeg
+              mov   dx,$D0        { DS:DX = 32 bytes scratch area in the PSP }
+              mov   ax,$3800      { get extended country information }
+              int   21h
+              mov   bx,dx
+              mov   ax,[bx+$12]   { Pointer to case conversion routine.. }
+              mov   bx,[bx+$14]   { for chars >80h }
+              pop   ds
+              jnc   @@ok          { if DOS reports error, set it to RETF }
+              mov   ax,Offset RetFar
+              mov   bx,ds
+    @@ok:
+              mov   word ptr cs:DOSUpCase,ax
+              mov   word ptr cs:DOSUpCase+2,bx
+    end ;
+  end.
+
+
+Bug: procedure TEditor.HandleEvent (Unit Editors)
+  This routine consumes all cmScrollBarChanged-events, without
+  testing the sender. With TEditor, everything is ok, but with
+  TMemo, there is a problem: this object cannot coexist in a
+  TDialog with other objects having scrollbars. The test, whe-
+  ther a cmScrollBarChanged-event is from one of its own scroll
+  bars is done in the local procedure CheckScrollBar, but the
+  HandleEvent routine clears the event in any case.
+Example:
+  TESTMEMO. Start it and press F1 to get a MemoDialog, where a
+  TMemo field is together with a TListviewer, both having scroll-
+  bars. Try to position the focus in the TListbox with the scroll-
+  bar or with the cursor keys (they are translated by the scroll-
+  bar as well): it won't work. On the contrary, the TMemo works
+  fine.
+Fix:
+  TEditor.HandleEvent(var Event: TEvent);
+
+  (* ... several lines skipped ... *)
+
+  { Bugfix JS: function CheckScrollBar:Boolean returns False, if
+    the sending scrollbar was not the scrollbar in question. }
+  function CheckScrollBar(P: PScrollBar; var D: Integer): Boolean;
+  begin
+    if (Event.InfoPtr = P) and (P^.Value <> D) then
+    begin
+      D := P^.Value;
+      Update(ufView);
+      CheckScrollBar := True;
+    end
+    else CheckScrollBar := False;
+  end;
+
+  begin
+    TView.HandleEvent(Event);
+    ConvertEvent(Event);
+
+  (* ... several lines skipped ... *)
+
+      evBroadcast:
+        case Event.Command of
+          cmScrollBarChanged:
+            { Bugfix JS: function CheckScrollBar():Boolean returns False,
+              if the sending scrollbar was not the scrollbar in question.
+              The EXIT prevents the Event from being cleared. }
+            if not(CheckScrollBar(HScrollBar, Delta.X) or
+                   CheckScrollBar(VScrollBar, Delta.Y)) then Exit;
+          else Exit;
+        end;
+    end;
+    ClearEvent(Event);
+  end;
+
+
+Bug: function TEditor.InsertBuffer (Unit Editors)
+  Overwriting chars in an TEditor object is done in TEditor.Handle-
+  Event by marking the next char as block and calling InsertBuffer
+  via InsertText. This routine checks, whether there is enough
+  memory and complains (edOutOfMemory), but does not reset the
+  block marker. If you now press backspace, the block is deleted
+  (i.e. the char under the cursor), not the char on the left side
+  of the cursor.
+Example:
+  Be sure to compile TVDEMOS\TVEDIT.PAS without the Range Check
+  option; there seems to be another minor bug concerning Integer
+  and Word types. Start TVEDIT.EXE, open a new edit window and
+  start typing until the messagebox 'Not enough memory for this
+  operation' comes up. Press Enter to close the messagebox, move
+  the cursor in the middle of a line and type until the messagebox
+  comes up again. Press Enter to close it again and then press
+  Backspace. Not the char on the left side of the cursor will be
+  deleted, but the char at cursor position.
+Fix:
+  function TEditor.InsertBuffer(var P: PEditBuffer; Offset, Length: Word;
+    AllowUndo, SelectText: Boolean): Boolean;
+  var
+    SelLen, DelLen, SelLines, Lines: Word;
+    NewSize: Longint;
+  begin
+    InsertBuffer := True;
+    Selecting := False;
+    SelLen := SelEnd - SelStart;
+    if (SelLen = 0) and (Length = 0) then Exit;
+    DelLen := 0;
+    if AllowUndo then
+      if CurPtr = SelStart then DelLen := SelLen else
+        if SelLen > InsCount then DelLen := SelLen - InsCount;
+    NewSize := Longint(BufLen + DelCount - SelLen + DelLen) + Length;
+    if NewSize > BufLen + DelCount then
+      if (NewSize > $FFF0) or not SetBufSize(NewSize) then
+      begin
+        EditorDialog(edOutOfMemory, nil);
+        { Bugfix JS: reset block markers to avoid abnormal behaviour
+          of a following BackSpace: }
+        SelEnd := SelStart;
+        InsertBuffer := False;
+        Exit;
+      end;
+
+  (* ... several lines skipped ... *)
+
+    SetBufSize(BufLen + DelCount);
+    if (SelLines = 0) and (Lines = 0) then Update(ufLine) else Update(ufView);
+  end;
+
+Bug: function NoWildChars (Unit StdDlg)
+  This routine is used by TFileDialog-objects to delete wildcards
+  in filenames. If called with an empty argument, it overwrites
+  the stack. Try it: just give first '*' as mask, then a name with
+  no extension in a TFileDialog.
+Example:
+  TVDEMOS\TVDEMO.PAS. Create the file TEST (no extension!), then
+  start TVDEMO.EXE. Press F3 to invoke the FileOpen dialog. Type
+  "*" without the quote marks, press Enter, choose TEST from the
+  file list and press Enter again: The system hangs.
+Fix:
+  function NoWildChars(S: String): String; assembler;
+  asm
+          PUSH  DS
+          LDS   SI,S            { pointer to argument string }
+          LES   DI,@Result      { same to result string }
+          XOR   AX,AX
+          LODSB                 { get length of argument string }
+          { Bugfix JS: test for empty argument string }
+          OR    AL,AL           { length=0 ? }
+          JE    @@3             { -> result = '' }
+          XCHG  AX,CX           { else: }
+          INC   DI              { skip result length byte }
+  @@1:    LODSB                 { get char from argument string }
+          CMP   AL,'?'          { '?' or '*' ? }
+          JE    @@2             { then skip it.. }
+          CMP   AL,'*'
+          JE    @@2
+          STOSB                 { else copy it into result string }
+  @@2:    LOOP  @@1
+          XCHG  AX,DI           { calculate length of result string.. }
+          MOV DI,WORD PTR @Result
+          SUB AX,DI             { as Endoffset+1 - Startoffset }
+          DEC     AX            { don't count the length byte }
+  @@3:
+          STOSB                 { set length of result string }
+          POP DS
+  end;
+
+Bug: procedure THelpTopic.AddCrossRef (Unit HelpFile)
+  In this routine the programmer allocates memory and then
+  forgets to use the pointer to it. He just forgot a line.
+Example:
+  No example. 'The code is obvious.'
+Fix:
+  procedure THelpTopic.AddCrossRef(Ref: TCrossRef);
+  var
+    P: PCrossRefs;
+  begin
+    GetMem(P, (NumRefs+1) * SizeOf(TCrossRef));
+    if NumRefs > 0 then
+    begin
+      Move(CrossRefs^, P^, NumRefs * SizeOf(TCrossRef));
+      FreeMem(CrossRefs, NumRefs * SizeOf(TCrossRef));
+    end;
+    { Bugfix JS: the following line is missing in the original }
+    CrossRefs := P;
+    CrossRefs^[NumRefs] := Ref;
+    Inc(NumRefs);
+  end;
+
+Bug: function THelpIndex.Position (Unit HelpFile)
+  If called with a negative argument, it returns random values,
+  since it checks only for the upper bound, not for the lower
+  one. The help compiler TVHC uses -1 for unknown topics, so
+  this doesn't work.
+Example:
+  Compile TVDEMOS\TVDEMO.PAS to disk. Then add the
+  line
+    {abc}
+  to the first topic in TVDEMOS\DEMOHELP.TXT and
+  compile it with
+     TVHC DEMOHELP.TXT
+  This will produce DEMOHELP.HLP and DEMOHELP.PAS.
+  Start TVDEMO.EXE, press F1 to see the general help
+  and then Enter to follow the cross reference 'abc'.
+  You will not see the text 'No help available in this
+  context.', as intended by HELPFILE.PAS, but get a
+  runtime error (if you compiled TVDEMO with Range Check
+  option) or a randomly chosen help text if any (without
+  Range checking).
+Fix:
+  function THelpIndex.Position(I: Integer): Longint;
+  begin
+    if (-1 < I) and (I < Size) then Position := Index^[I]
+    else Position := -1;
+  end;
+
+Bug: procedure AddToBuffer (Programm TVHC)
+  No range checking is done in this routine. If a paragraph is
+  longer than specified in the constant BufferSize (default:1024),
+  memory behind the buffer is overwritten, resulting in crash.
+Example:
+  Create a file TESTHELP.TXT with this content:
+    .topic TestContext
+    The following paragraph is too long to fit into the
+    standard-sized buffer of TVHC.PAS:
+      1234567890123456789012345678901234567890
+      1234567890123456789012345678901234567890
+
+        .. another 100 lines likes these ..
+
+      1234567890123456789012345678901234567890
+      1234567890123456789012345678901234567890
+  Now start TVHC on it:
+    TVHC TESTHELP.TXT
+  Your system will hang, if you haven't compiled TVHC with Range
+  Check option, otherwise you will get a runtime error 204.
+Fix:
+  procedure AddToBuffer(var Line: String; Wrapping: Boolean); assembler;
+  asm
+          PUSH    DS
+          CLD
+          PUSH    DS
+          POP     ES
+          MOV     DI,OFFSET Buffer
+          ADD     DI,Ofs
+          LDS     SI,Line
+          LODSB
+          XOR     AH,AH
+          { Bugfix JS: the following test is missing in the original
+            version. Causes crashes on buffer overflow }
+          MOV     BX,BufferSize { BufferSize-Ofs is the space left in Buffer }
+          SUB     BX,ES:Ofs
+          CMP     BX,AX         { AX holds the needed amount of space }
+          JAE     @@0           { enough -> ok }
+          MOV     AX,BX         { else just fill the Buffer up }
+  @@0:
+          ADD     ES:Ofs,AX
+          XCHG    AX,CX
+          JCXZ    @@3           { don't copy 64K if there is nothing to do }
+          REP     MOVSB
+          CMP     ES:Ofs,BufferSize
+          JE      @@3           { don't append ' '/#13 if there is no room }
+          XOR     AL,AL
+          INC     ES:Ofs
+          TEST    Wrapping,1    { Only add a #13, line terminator, if not }
+          JE      @@1           { currently wrapping the text. Otherwise  }
+          MOV     AL,' '-13     { add a ' '.                              }
+  @@1:    ADD     AL,13
+  @@2:    STOSB
+  @@3:
+          POP     DS
+  end;
+
+Bug: procedure THistory.Draw (Unit Dialogs)
+  For the history button sides, the chars ASCII 221 and 222 are
+  used. These chars are _not_ included in codepages other than
+  437 (e.g. codepage 850, recommended by IBM for europe). So,
+  the button looks somewhat awful in europe.
+Example:
+  To use codepage 850 with your display, include the lines
+  (with correct paths, of course)
+      nlsfunc.exe country.sys
+      mode con cp prepare=((850)ega.cpi)
+  in your AUTOEXEC.BAT and type CHCP 850 at the DOS prompt after
+  startup. DOS will complain, because you haven't prepared this
+  codepage for all devices, but this doesn't matter. Start
+  TVDEMOS\TVDEMO and press F3 to invoke a TFileDialog with a
+  history button on the left side of the 'Name' input line.
+  Look at the System-menu symbol for another example of such
+  incompatibly written software.
+Fix:
+  No fix.
+
+Bug: integrated assembler
+  The integrated assembler doesn't generate the correct code for
+  lines like this:
+
+         MOV AX,[WORD PTR BX]
+
+  The alternative form
+
+         MOV AX,WORD PTR [BX]
+
+  is handled properly. This is especially bad, since the first form
+  is TASM syntax in Ideal mode, while the latter is MASM syntax.
+Example:
+  Compile TESTASM.PAS to disk. Then start DEBUG with TESTASM.EXE
+  and type 'u' to unassemble the code. You will see
+    MOV  BX,0038
+    MOV  AX,[0000]
+    MOV  AX,[BX]
+Fix:
+  No fix.
+
+
+Some improvements:
+Behaviour: ^T in TVEdit sometimes deletes more than the next word.
+Explanation:
+  ^T deletes _up to the next_ word, to be exact: up to the next
+  char out of
+    WordChars: set of Char = ['0'..'9', 'A'..'Z', '_', 'a'..'z']
+  This will usually be just the next word, but can be more. The
+  IDE editor first skips the current word if the cursor is in one.
+  Then it skips blanks and tabs up to the next non-blank/non-tab.
+Example:
+  EDIT.PAS. Open a new edit window and type this line:
+    abc[[[[123]
+  Press Home to position the cursor on the 'a'. Press ^T; this
+  will delete 'abc[[[['. The TurboPascal Editor would delete 'abc'.
+Fix:
+  function TEditor.NextWord(P: Word): Word;
+  begin
+    if BufChar(P) in WordChars then
+      while (P < BufLen) and (BufChar(P) in WordChars) do
+        P := NextChar(P)
+    else
+      P := NextChar(P);
+    while (P < BufLen) and ((BufChar(P) = ' ') or (BufChar(P) = #9)) do
+      P := NextChar(P);
+    NextWord := P;
+  end ;
+
+Behaviour: ^QF followed by ^L followed by Space deletes words in TVEdit.
+Explanation:
+  If you mark a block manually and type a key, the block will be
+  replaced by the key. Because occurences of the search string
+  are marked as block, the described effect is seen. If you
+  really want to avoid it, you have to change TEditor.HandleEvent
+  to clear the blockmarkers before inserting a normal char.
+Example:
+  EDIT.PAS. Open a new edit window and type this:
+    1234567890
+  Move the cursor to the '3', hold down a Shift key and move the
+  cursor to the '8' to mark the string '34567'. Press the space
+  bar; this will replace '34567' by ' '.
+Fix:
+  TEditor.HandleEvent(var Event: TEvent);
+
+  (* ... several lines skipped ... *)
+
+  begin
+
+  (* ... several lines skipped ... *)
+
+      evKeyDown:
+        case Event.CharCode of
+          #9,#32..#255:
+            begin
+              Lock;
+              { Improvement JS: reset blockmarkers if not overwriting }
+              if Overwrite then
+                begin
+                  if CurPtr <> LineEnd(CurPtr) then SelEnd := NextChar(CurPtr)
+                end
+              else
+                SelEnd := SelStart;
+              InsertText(@Event.CharCode, 1, False);
+              TrackCursor(CenterCursor);
+              Unlock;
+            end;
+        else
+          Exit;
+        end;
+
+  (* ... several lines skipped ... *)
+
+  end;
+
+
+What I thought to be a bug, but was not:
+Bug: local assembly-procedures in assembly-procedures
+  Here the compiler seems to have problems with the parameter
+  sizes. Look at this:
+
+    function FnTruncSet(Pattern:String):Boolean ; assembler ;
+        procedure Number ; assembler ;
+        asm
+          [....]
+        end ;
+    asm
+      [....]
+      call Number
+      [....]
+    end ;
+
+  For the procedure Number, the compiler generates a RET 2 instead
+  of RET. I have no idea, why it wants to pop 2 bytes while having
+  no argument; in this form, it will crash.
+Explanation:
+  In the Programmer's reference, nested procedures are described.
+  TurboPascal always pushes BP onto the stack to allow local pro-
+  cedures to access the arguments of the enclosing routine. So, it
+  has to pop 2 Bytes at the end.
+Fix:
+  RTFM. Or, TurboPascal should not do this, because the same manual
+  states that ASSEMBLER routines do not get a stack frame, if they
+  have no arguments and local variables. So BP doesn't have to be
+  pushed, it already has its correct value inside the local routine.
+
+---------------------------  EDIT.PAS  ------------------------------
+{ This text describes changes to be applied to the program TVEDIT.PAS
+  from Borland. The changes will extend it to allow storing and reloa-
+  ding the desktop with routines from TVDEMO.PAS. All changes are
+  described in the form
+    (* TVEDIT.PAS original <place/routine name> *)
+      ... program text from TVEDIT.PAS ...
+    (* EDIT.PAS replacement *)
+      ... some other program text ...
+  Just replace (or better: add) as described, and you will get EDIT.PAS
+}
+
+(* TVEDIT.PAS original, at the top: *)
+  const
+    cmOpen       = 100;
+    cmNew        = 101;
+    cmChangeDir  = 102;
+    cmDosShell   = 103;
+    cmCalculator = 104;
+    cmShowClip   = 105;
+
+(* EDIT.PAS replacement *)
+  const
+    cmOpen       = 100;
+    cmNew        = 101;
+    cmChangeDir  = 102;
+    cmDosShell   = 103;
+    cmCalculator = 104;
+    cmShowClip   = 105;
+    cmSaveDesktop     =1000;
+    cmRetrieveDesktop =1001;
+
+
+(* TVEDIT.PAS original, at the top *)
+  type
+    PEditorApp = ^TEditorApp;
+    TEditorApp = object(TApplication)
+      constructor Init;
+      destructor Done; virtual;
+      procedure HandleEvent(var Event: TEvent); virtual;
+      procedure InitMenuBar; virtual;
+      procedure InitStatusLine; virtual;
+      procedure OutOfMemory; virtual;
+    end;
+
+(* EDIT.PAS replacement *)
+  type
+    PEditorApp = ^TEditorApp;
+    TEditorApp = object(TApplication)
+      constructor Init;
+      destructor Done; virtual;
+      procedure HandleEvent(var Event: TEvent); virtual;
+      procedure InitMenuBar; virtual;
+      procedure InitStatusLine; virtual;
+      procedure LoadDesktop(var S: TStream);
+      procedure StoreDesktop(var S: TStream);
+      procedure OutOfMemory; virtual;
+    end;
+
+(* TVEDIT.PAS original, TEditorApp.Init *)
+    if H > HeapSize then BufHeapSize := H - HeapSize else BufHeapSize := 0;
+    InitBuffers;
+    TApplication.Init;
+    DisableCommands([cmSave, cmSaveAs, cmCut, cmCopy, cmPaste, cmClear,
+      cmUndo, cmFind, cmReplace, cmSearchAgain]);
+
+(* EDIT.PAS replacement
+    if H > HeapSize then BufHeapSize := H - HeapSize else BufHeapSize := 0;
+    InitBuffers;
+    RegisterObjects;
+    RegisterViews;
+    RegisterMenus;
+    RegisterDialogs;
+    RegisterApp;
+    RegisterEditors;
+    RegisterCalc;
+    TApplication.Init;
+    DisableCommands([cmSave, cmSaveAs, cmCut, cmCopy, cmPaste, cmClear,
+      cmUndo, cmFind, cmReplace, cmSearchAgain]);
+
+
+(* TVEDIT.PAS, original does not include the following routines: *)
+(* EDIT.PAS addition *)
+  { copied from TVDEMO.PAS and modified TTVDemo to TEditorApp }
+  { Since the safety pool is only large enough to guarantee that allocating
+    a window will not run out of memory, loading the entire desktop without
+    checking LowMemory could cause a heap error.  This means that each
+    window should be read individually, instead of using Desktop's Load.
+  }
+
+  procedure TEditorApp.LoadDesktop(var S: TStream);
+  var
+    P: PView;
+
+  procedure CloseView(P: PView); far;
+  begin
+    Message(P, evCommand, cmClose, nil);
+  end;
+
+  begin
+    if Desktop^.Valid(cmClose) then
+    begin
+      Desktop^.ForEach(@CloseView); { Clear the desktop }
+      repeat
+        P := PView(S.Get);
+        Desktop^.InsertBefore(ValidView(P), Desktop^.Last);
+      until P = nil;
+    end;
+  end;
+
+  procedure TEditorApp.StoreDesktop(var S: TStream);
+
+  procedure WriteView(P: PView); far;
+  begin
+    if P <> Desktop^.Last then S.Put(P);
+  end;
+
+  begin
+    Desktop^.ForEach(@WriteView);
+    S.Put(nil);
+  end;
+
+
+(* TVEDIT.PAS original, TEditorApp.HandleEvent does not include the
+   following local routines: *)
+(* EDIT.PAS addition *)
+  { copied from TVDEMO.PAS and modified filenames }
+  procedure RetrieveDesktop;
+  var
+    S: PStream;
+  begin
+    S := New(PBufStream, Init('TVEDIT.DSK', stOpenRead, 1024));
+    if LowMemory then OutOfMemory
+    else if S^.Status <> stOk then
+      MessageBox('Could not open desktop file', nil, mfOkButton + mfError)
+    else
+    begin
+      LoadDesktop(S^);
+      if S^.Status <> stOk then
+        MessageBox('Error reading desktop file', nil, mfOkButton + mfError);
+    end;
+    Dispose(S, Done);
+  end;
+
+  procedure SaveDesktop;
+  var
+    S: PStream;
+    F: File;
+  begin
+    S := New(PBufStream, Init('TVEDIT.DSK', stCreate, 1024));
+    if not LowMemory and (S^.Status = stOk) then
+    begin
+      StoreDesktop(S^);
+      if S^.Status <> stOk then
+      begin
+        MessageBox('Could not create TVEDIT.DSK.', nil, mfOkButton + mfError);
+        {$I-}
+        Dispose(S, Done);
+        Assign(F, 'TVEDIT.DSK');
+        Erase(F);
+        Exit;
+      end;
+    end;
+    Dispose(S, Done);
+  end;
+
+
+(* TVEDIT.PAS original, TEditorApp.HandleEvent *)
+          cmCalculator: Calculator;
+          cmShowClip: ShowClip;
+          cmTile: Tile;
+          cmCascade: Cascade;
+        else
+          Exit;
+
+(* EDIT.PAS replacement *)
+          cmCalculator: Calculator;
+          cmShowClip: ShowClip;
+          cmTile: Tile;
+          cmCascade: Cascade;
+          cmSaveDesktop: SaveDesktop;
+          cmRetrieveDesktop: RetrieveDesktop;
+        else
+          Exit;
+
+
+(* TVEDIT.PAS original, TEditorApp.InitMenuBar *)
+      NewItem('~P~revious', 'Shift-F6', kbShiftF6, cmPrev, hcNoContext,
+      NewItem('~C~lose', 'Alt-F3', kbAltF3, cmClose, hcNoContext,
+      NewLine(
+      NewItem('Ca~l~culator', '', kbNoKey, cmCalculator, hcNoContext,
+      nil)))))))))),
+    nil)))))));
+end;
+
+(* EDIT.PAS replacement *)
+        NewItem('~P~revious', 'Shift-F6', kbShiftF6, cmPrev, hcNoContext,
+        NewItem('~C~lose', 'Alt-F3', kbAltF3, cmClose, hcNoContext,
+        NewLine(
+        NewItem('Ca~l~culator', '', kbNoKey, cmCalculator, hcNoContext,
+        NewLine(
+        NewItem('~R~etrieve desktop', '', kbNoKey, cmRetrieveDesktop, hcNoContex
+        NewItem('Sa~v~e desktop', '', kbNoKey, cmSaveDesktop, hcNoContext,
+        nil)))))))))))))
+      nil)))))));
+  end;
+
+---------------------------  TESTASM.PAS  ---------------------------
+program TestAsm;
+begin
+  asm
+    MOV  BX,OFFSET PrefixSeg
+    MOV  AX,[WORD PTR BX]
+    MOV  AX,WORD PTR [BX]
+  end;
+end.
+---------------------------  TESTMEMO.PAS  --------------------------
+program TestMemos ;
+uses Objects,Drivers,Views,Menus,Dialogs,Editors,App;
+
+const
+  cmMemo = 1000;
+
+type
+  PDemoListViewer = ^TDemoListViewer;
+  TDemoListViewer = object(TListViewer)
+    function GetText(Item: Integer; MaxLen: Integer): String; virtual;
+  end;
+
+type
+  TMemoApp=object(TApplication)
+    procedure InitStatusLine; virtual;
+    procedure HandleEvent(var Event:TEvent); virtual;
+  end;
+
+function TDemoListViewer.GetText(Item: Integer; MaxLen: Integer): String;
+var
+  S: String[5];
+begin
+  Str(Item, S);
+  GetText := copy('Item '+S,1,MaxLen);
+end;
+
+procedure TMemoApp.InitStatusLine;
+var
+  R: TRect;
+begin
+  GetExtent(R);
+  R.A.Y := R.B.Y - 1;
+  New(StatusLine, Init(R,
+    NewStatusDef(0, $FFFF,
+      NewStatusKey('~Alt-X~ Exit', kbALtX, cmQuit,
+      NewStatusKey('~F1~ MemoDialog', kbF1, cmMemo,
+      nil)),
+    nil)));
+end;
+
+procedure TMemoApp.HandleEvent(var Event:TEvent);
+var
+  R: TRect;
+  D: PDialog;
+  V,W: PView;
+begin
+  TApplication.HandleEvent(Event);
+  if (Event.What = evCommand) and (Event.Command = cmMemo) then
+    begin
+      R.Assign(22, 3, 58, 19);
+      D := New(PDialog,Init(R, 'MemoDialog'));
+      with D^ do
+        begin
+          R.Assign(12, 2, 13, 14);
+          V := New(PScrollBar, Init(R));
+          Insert(V);
+          R.Assign(2, 2, 12, 14);
+          V := New(PDemoListViewer, Init(R, 1, nil, PScrollBar(V)));
+          PDemoListViewer(V)^.SetRange(20);
+          Insert(V);
+
+          R.Assign(33, 2, 34, 13);
+          V := New(PScrollBar, Init(R));
+          Insert(V);
+          R.Assign(14, 13, 33, 14);
+          W := New(PScrollBar, Init(R));
+          Insert(W);
+          R.Assign(14, 2, 33, 13);
+          V := New(PMemo, Init(R, PScrollBar(W), PScrollBar(V), nil, 1024));
+          Insert(V);
+        end;
+      DeskTop^.ExecView(D);
+      D^.Done;
+    end;
+end;
+
+var MemoApp:TMemoApp;
+begin
+  MemoApp.Init;
+  MemoApp.Run;
+  MemoApp.Done;
+end.
+--------------------  End of bugs!  ---------------------------------
+I got an update to TP6.01, but they haven't change anything.
+-  J"urgen Schlegelmilch
+

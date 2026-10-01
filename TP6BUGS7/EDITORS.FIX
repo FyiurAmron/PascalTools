@@ -1,0 +1,59 @@
+From: Dj Murdoch                                #15811 Date: 10 Dec 91  07:54:21
+To:   Tony Phillips                                                      Rec Loc
+Subj: Re: Fix For TP 6.0 Editer
+ TP> Does anyone have the fix for sample text editer that comes with Tp 6.0?
+ TP> I've noticed a few of the number keys don't work. Any help 
+ TP> would be appreciated!
+
+Here's the Borland patch for that bug.  But beware:  there are lots of other
+bugs in the Editors unit.  Don't blame me for the ugly formatting - this is
+exactly the way it was posted on Compuserve.
+
+-------------------------------------------------------
+
+The following patch fixes the problem of not being able to enter numbers 3 
+thru 6 into the editor of the EDITORS.PAS example shipped with Turbo Pascal 
+6.0. 
+
+Open EDITORS.PAS in the TURBO editor and search for the EXISTING code.   Once
+that is found change the EXISTING code to the CHANGE TO code.  Save your changes
+and recompile EDITORS.PAS.
+
+
+EXISTING:                EXISTING:
+
+LODSW                    var
+OR      BL,BL              Key: Word;
+JE      @@2
+CMP     BL,DL            CHANGE TO:
+
+CHANGE TO:               var
+                           ShiftState: Byte absolute
+LODSW                        $40:$17;
+CMP     BL,DL              Key: Word;
+
+---------------------------------------------------
+
+EXISTING:                EXISTING:
+
+JE      @@4              begin
+@@2:    CMP     BH,DH      Key := Event.KeyCode;
+JE      @@4
+                         CHANGE TO:
+CHANGE TO:
+                         begin
+JE      @@4                if (ShiftState and $03 <> 0)
+CMP     BH,DH               and (Event.ScanCode >= $47)
+JE      @@4                  and (Event.ScanCode <= $51)
+                         then
+--------------------------   Event.CharCode := #0;
+                           Key := Event.KeyCode;
+
+
+
+
+--- Msg V3.2
+ * Origin: Murdoch's Point: Ottawa, Ontario, Canada  (1:163/140.3)
+
+
+------
